@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- PATH_TO_ICYSTDLIB - if unset, assume the path is relative to this msbuild file -->
+    <!-- _RELPATH_TO_ICYSTDLIB - relative paths for the ClCompile and ClInclude are nice, works better with filters -->
+    <PATH_TO_ICYSTDLIB Condition="'$(PATH_TO_ICYSTDLIB)' == ''">$(MSBuildThisFileDirectory.TrimEnd('\'))</PATH_TO_ICYSTDLIB>
+    <_RELPATH_TO_ICYSTDLIB>$([MSBuild]::MakeRelative($(ProjectDir), $(PATH_TO_ICYSTDLIB)))</_RELPATH_TO_ICYSTDLIB>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/filesystem.msw.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/fs.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/logger_local_buffer.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/msw-printf-stdout.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/msw_app_console_init.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/posix_file.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/StringUtil.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/msw_app_console_init.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/posix_file.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/StringTokenizer.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/StringUtil.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/ConfigFileParser.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/defer.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/fi-platform-defines.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/fi-pragma-todo.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/fi-printf-redirect.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/fi-verify-printf-msvc.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/fs.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/jfmt.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/logger_local_buffer.h" />
+  </ItemGroup>
+</Project>

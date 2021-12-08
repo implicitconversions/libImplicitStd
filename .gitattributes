@@ -1,0 +1,28 @@
+* text=auto
+
+# GIT BASH chokes on CRLFs in shell scripts.
+*.sh text eol=lf
+
+# cmd.exe can handle CRLF _or_ LF, but dislikes mixed line endings. Normalize as
+# LF to correct mixed endings. (In general I prefer using LF unless some specific
+# reason to avoid it, CRLF is legacy nonsense that microsoft themselves are trying
+# to move away from)
+
+*.cmd text eol=lf
+*.bat text eol=lf
+
+# Visual Studio will end up normalizing these to CRLF, but it can help minimize
+# confusion if git normalizes to CRLF on checkout.
+
+*.vcxproj text eol=crlf
+*.sln text eol=crlf
+
+*.IMG    binary -delta
+*.pmf    binary -delta
+*.at3    binary -delta
+*.mp4    binary -delta
+*.aac    binary -delta
+*.exe    binary
+*.elf    binary
+*.prx    binary
+*.psd    binary
