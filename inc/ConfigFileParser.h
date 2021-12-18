@@ -7,6 +7,8 @@
 #include "StringUtil.h"
 #include "fs.h"
 #include "defer.h"
+
+#include "icy_assert.h"
 #include "icy_log.h"
 
 using ConfigParseAddFunc = std::function<void(const std::string&, const std::string&)>;

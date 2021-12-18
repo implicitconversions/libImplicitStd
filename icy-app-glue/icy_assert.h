@@ -31,7 +31,7 @@
 #endif
 
 #if !defined(house_check)
-#	define house_check(cond, ...)		((cond) || (fprintf(stderr, ICY_TRACE "(assert failed) " # cond ": " __VA_ARGS__ ), abort(),0))
+#	define house_check(cond, ...)	((cond) || (fprintf(stderr, ICY_TRACE "(assert failed) " # cond ": " __VA_ARGS__ ), abort(),0))
 #endif
 
 #if !defined(house_abort)
