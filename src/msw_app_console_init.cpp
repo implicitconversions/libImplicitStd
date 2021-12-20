@@ -1,7 +1,4 @@
 
-// FIXME: set_abort_behavior is a CRT thing, and is not supported on mingw toolchain
-// We should separate it from the console bits.
-
 #if !!PLATFORM_MSW && defined(_MSC_VER)
 #include <Windows.h>
 #include <Dbghelp.h>
@@ -19,11 +16,8 @@ static const int CALL_FIRST		= 1;
 static const int CALL_LAST		= 0;
 
 const int MAX_APP_NAME_LEN = 24;
-static char s_msw_app_name_for_coredumps[MAX_APP_NAME_LEN+1] = "msw-app";
 static bool s_interactive_user_environ = 1;
-static bool s_allow_ugly_console = 1;
 static bool s_dump_on_abort = 1;
-
 
 void msw_set_abort_message(bool onoff) {
 	// _set_abort_behavior() only does things in debug CRT. We need popups in release builds too, so
@@ -54,8 +48,8 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname)
 
 	MINIDUMP_TYPE mdt       = MiniDumpNormal;
 
-	char dumpfile[200];
-	sprintf_s(dumpfile, "%s-crashdump.dmp", dumpname);
+	char dumpfile[240];
+	sprintf_s(dumpfile, "%.*s-crash.dmp", MAX_APP_NAME_LEN, dumpname);
 
 	// GENERIC_WRITE, FILE_SHARE_READ used to minimize vectors for failure.
 	// I've had multiple issues of this crap call failing for some permission denied reason. --jstine
@@ -97,12 +91,16 @@ static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 	fprintf(stderr, "PageFault %s at %p\n", isWrite ? "write" : "read", access_address);
 	fflush(nullptr);
 
-	msw_WriteFullDump(eps, s_msw_app_name_for_coredumps);
+	char const* basename = strrchr(__argv[0], '/');
+	if (!basename) basename = __argv[0];
+	basename += basename[0] == '/';
+
+	msw_WriteFullDump(eps, basename);
 
 	if (s_interactive_user_environ && !::IsDebuggerPresent()) {
 		// surface it to the user if no debugger attached, if debugger it likely already popped up an exception dialog...
 		char fmt_buf[MAX_APP_NAME_LEN + 24];	// avoid heap, it could be corrupt
-		sprintf_s(fmt_buf, "SIGSEGV - %s", s_msw_app_name_for_coredumps);
+		sprintf_s(fmt_buf, "SIGSEGV - %.*s", MAX_APP_NAME_LEN, basename);
 		auto result = ::MessageBoxA(nullptr,
 			"ACCESS VIOLATION (SIGSEGV) has occurred and the process has been terminated. "
 			"Check the console output for more details.",
@@ -122,11 +120,15 @@ void SignalHandler(int signal)
 			return;
 		}
 
-		msw_WriteFullDump(nullptr, s_msw_app_name_for_coredumps);
+		char const* basename = strrchr(__argv[0], '/');
+		if (!basename) basename = __argv[0];
+		basename += basename[0] == '/';
+
+		msw_WriteFullDump(nullptr, basename);
 
 		if (s_interactive_user_environ && !::IsDebuggerPresent()) {
 			char fmt_buf[MAX_APP_NAME_LEN + 24];	// avoid heap.
-			sprintf_s(fmt_buf, "abort() - %s", s_msw_app_name_for_coredumps);
+			sprintf_s(fmt_buf, "abort() - %.*s", MAX_APP_NAME_LEN, basename);
 
 			auto result = ::MessageBoxA(nullptr,
 				"An error has occured and the application has aborted.\n"
@@ -138,14 +140,15 @@ void SignalHandler(int signal)
 	}
 }
 
-void msw_AllowUglyConsole(bool enable) {
-	s_allow_ugly_console = enable;
-}
+void msw_InitAppForConsole() {
+	static bool bRun = 0;
+	if (bRun) return;
+	bRun = 1;
 
-void msw_InitAppForConsole(const char* app_name) {
-
-	strncpy(s_msw_app_name_for_coredumps, app_name, MAX_APP_NAME_LEN);
-	s_msw_app_name_for_coredumps[MAX_APP_NAME_LEN] = 0;	// because strncpy is stupid.
+	// the crashdump filenameing logic depends on backslash replacement.
+	for(char* p = __argv[0]; *p; ++p) {
+		if (*p == '\\') *p = '/';
+	}
 
 	// Win10 no longer pops up msgs when exceptions occur. We'll need to produce crash dumps ourself...
 	AddVectoredExceptionHandler(CALL_FIRST, msw_PageFaultExceptionFilter);
@@ -220,8 +223,8 @@ void msw_InitAppForConsole(const char* app_name) {
 			// This is kind of an "emergency procedure only" option, since this console is
 			// ugly, buggy, and generally limited.
 
-			if (allow_popups && s_allow_ugly_console) {
-					msw_AllocUglyConsole();
+			if (allow_popups) {
+				msw_AllocWinNativeConsole();
 			}
 		}
 	}
@@ -234,9 +237,9 @@ void msw_InitAppForConsole(const char* app_name) {
 #endif
 }
 
-void msw_AllocUglyConsole() {
-    // Creates an old-fashioned console window, and enables UTF-8 support by setting a font
-    // that supports all character sets.
+void msw_AllocWinNativeConsole() {
+	// Creates an old-fashioned console window, and enables UTF-8 support by setting a font
+	// that supports all character sets.
 
 	auto previn  = ::GetStdHandle(STD_INPUT_HANDLE );
 	auto prevout = ::GetStdHandle(STD_OUTPUT_HANDLE);
@@ -263,28 +266,43 @@ void msw_AllocUglyConsole() {
 		}
 	}
 
-	// remap unassigned pipes to a newly-opened console.
-	// By affecting only unbound pipes, it allows the program to accept input from stdin or honor
-	// tee of stdout or stderr.
-	// open outputs as binary to suppress Windows newline corruption (\r mess)
+	// remap standard pipes to a newly-opened console.
+	// _fi_redirect internally will retain the existing pipes when the application was opened, so that
+	// redirections and original TTY/console will also continue to work.
 
-	if (!previn)  { freopen("CONIN$",  "r",  stdin ); }
-	if (!prevout) { freopen("CONOUT$", "wb", stdout); }
-	if (!preverr) { freopen("CONOUT$", "wb", stderr); }
+	_fi_redirect_winconsole_handle(stdin,  previn );
+	_fi_redirect_winconsole_handle(stdout, prevout);
+	_fi_redirect_winconsole_handle(stderr, preverr);
 
 	// Set console output to UTF8
 	::SetConsoleCP(CP_UTF8);
 	::SetConsoleOutputCP(CP_UTF8);
 
+#if 0
 	// Set console font to MS Gothic, which supports all charsets (CJK, Russian, Euro)
+	// This is an ugly font for a console, and we don't really need to display UTF8's for the emulators.
 	CONSOLE_FONT_INFOEX cfi = {};
 	cfi.cbSize = sizeof(cfi);
 	cfi.nFont = 0;
 	cfi.dwFontSize.X = 0;
-	cfi.dwFontSize.Y = 14;
+	cfi.dwFontSize.Y = 18;
 	cfi.FontFamily = FF_DONTCARE;
 	cfi.FontWeight = FW_NORMAL;
-	wcscpy_s(cfi.FaceName, L"MS Gothic");
+	wcscpy_s(cfi.FaceName, L"Yu Gothic UI");
+	::SetCurrentConsoleFontEx(::GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
+	::SetCurrentConsoleFontEx(::GetStdHandle(STD_ERROR_HANDLE), FALSE, &cfi);
+#endif
+}
+
+void dynhack() {
+	CONSOLE_FONT_INFOEX cfi = {};
+	cfi.cbSize = sizeof(cfi);
+	cfi.nFont = 0;
+	cfi.dwFontSize.X = 0;
+	cfi.dwFontSize.Y = 18;
+	cfi.FontFamily = FF_DONTCARE;
+	cfi.FontWeight = FW_NORMAL;
+	wcscpy_s(cfi.FaceName, L"Yu Gothic UI");
 	::SetCurrentConsoleFontEx(::GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
 	::SetCurrentConsoleFontEx(::GetStdHandle(STD_ERROR_HANDLE), FALSE, &cfi);
 }

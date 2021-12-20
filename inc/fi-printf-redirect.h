@@ -31,6 +31,7 @@ _extern_c int _fi_redirect_fprintf  (FILE* handle, const char* fmt, ...);
 _extern_c int _fi_redirect_puts     (char const* _Buffer);
 _extern_c int _fi_redirect_fputs    (char const* _Buffer, FILE* _Stream);
 _extern_c intmax_t _fi_redirect_fwrite(void const* src, size_t, size_t, FILE* fp);
+_extern_c void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);	// expects result of GetStdHandle
 
 #define printf(fmt, ...)		_fi_redirect_printf  (fmt, ## __VA_ARGS__)
 #define fprintf(fp, fmt, ...)	_fi_redirect_fprintf (fp, fmt, ## __VA_ARGS__)

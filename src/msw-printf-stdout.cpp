@@ -38,7 +38,6 @@ void msw_OutputDebugStringV(const char* fmt, va_list args)
 		::OutputDebugStringA("(*OutputDebugStringA*) previous message was truncated, see stderr console for full content");
 	}
 }
-
 #if REDEFINE_PRINTF
 #	undef printf
 #	undef vfprintf
@@ -46,6 +45,71 @@ void msw_OutputDebugStringV(const char* fmt, va_list args)
 #	undef puts
 #	undef fputs
 #   undef fwrite
+#endif
+
+static FILE* s_pipe_stdin;
+static FILE* s_pipe_stdout;
+static FILE* s_pipe_stderr;
+
+void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
+{
+	FILE** pipedest = nullptr;
+	char const* mode = nullptr;
+	char const* reopen_fn = nullptr;
+
+	// open outputs as binary to suppress Windows newline corruption (\r mess)
+
+	if (stdhandle == stdin)  { pipedest = &s_pipe_stdin;  mode = "r";  reopen_fn = "CONIN$" ; }
+	if (stdhandle == stdout) { pipedest = &s_pipe_stdout; mode = "wb"; reopen_fn = "CONOUT$"; }
+	if (stdhandle == stderr) { pipedest = &s_pipe_stderr; mode = "wb"; reopen_fn = "CONOUT$"; }
+
+	if (!pipedest || !mode) {
+		// too early to throw asserts.
+		return;
+	}
+
+	if (winhandle)
+	{
+		if (*pipedest) fclose(*pipedest);
+
+		// record the existing pipe handle so that we can send interesting stuff there too.
+		// To do so properly we use DuplicateHandle on the provided winhandle, otherwise the
+		// process/app will close it our from under us StdStdHandle is called later.
+
+		HANDLE dupHandle;
+		auto winresult = DuplicateHandle(GetCurrentProcess(), winhandle,
+			GetCurrentProcess(), &dupHandle , 0,
+			FALSE, DUPLICATE_SAME_ACCESS
+		);
+
+		if (winresult) {
+			int fd = _open_osfhandle((intptr_t)dupHandle, _O_BINARY);
+			*pipedest = _fdopen(fd, mode);
+			if (stdhandle == stdout) {
+				setvbuf(*pipedest, NULL, _IOFBF, 32768);
+			}
+			else {
+				setvbuf(*pipedest, NULL, _IONBF, 0);
+			}
+		}
+		else {
+			// log out the error, it'll hopefully show up in the piped file as a clue.
+			if (stdhandle != stdin) {
+				fprintf(stdhandle, "DuplicateHandle(%s) failed: Windows Error 0x%08x\nThis pipe will be closed/inactive as a result.", (stdhandle==stdout) ? "stdout" : "stderr", GetLastError());
+			}
+			else {
+				fprintf(stderr, "DuplicateHandle(stdin) failed: Windows Error 0x%08x\n", GetLastError());
+			}
+		}
+	}
+	
+	if (reopen_fn) {
+		freopen(reopen_fn,  mode,  stdhandle);
+	}
+}
+
+
+#if REDEFINE_PRINTF
 
 extern "C" {
 int _fi_redirect_printf(const char* fmt, ...)
@@ -66,6 +130,15 @@ int _fi_redirect_fprintf(FILE* handle, const char* fmt, ...)
 	return result;
 }
 
+// in all cases where this is used, we honor result from original pipe, since it might have EOF restrictions
+// (and it's very unlikely the windows console would).
+static FILE* getOriginalPipeHandle(FILE* stdhandle)
+{
+	if ((s_pipe_stdout && stdhandle == stdout)) return s_pipe_stdout;
+	if ((s_pipe_stderr && stdhandle == stderr)) return s_pipe_stderr;
+	return nullptr;
+}
+
 int _fi_redirect_vfprintf(FILE* handle, const char* fmt, va_list args)
 {
 	int result;
@@ -73,12 +146,24 @@ int _fi_redirect_vfprintf(FILE* handle, const char* fmt, va_list args)
 		// flush stdout before writing stderr, otherwise the context of stderr will be misleading.
 		if (handle == stderr) {
 			fflush(stdout);
+			if (s_pipe_stdout) {
+				fflush(s_pipe_stdout);
+			}
 		}
 
 		va_list argptr;
 		va_copy(argptr, args);
 		result = vfprintf(handle, fmt, argptr);
 		va_end(argptr);
+	}
+
+	if (1) {
+		if (FILE* pipeto = getOriginalPipeHandle(handle)) {	
+			va_list argptr;
+			va_copy(argptr, args);
+			result = vfprintf(pipeto, fmt, argptr);
+			va_end(argptr);
+		}
 	}
 
 	if (handle == stdout || handle == stderr)
@@ -101,6 +186,11 @@ int _fi_redirect_puts(char const* buffer) {
 
 int _fi_redirect_fputs(char const* buffer, FILE* handle) {
 	int result = fputs(buffer, handle);
+
+	if (FILE* pipeto = getOriginalPipeHandle(handle)) {	
+		result = fputs(buffer, pipeto);
+	}
+
 	if (handle == stdout || handle == stderr)
 	{
 		if (msw_IsDebuggerPresent()) {
@@ -113,10 +203,15 @@ int _fi_redirect_fputs(char const* buffer, FILE* handle) {
 intmax_t _fi_redirect_fwrite(void const* buffer, size_t size, size_t nelem, FILE* handle)
 {
 	auto result = fwrite(buffer, size, nelem, handle);
+
+	if (FILE* pipeto = getOriginalPipeHandle(handle)) {	
+		result = fwrite(buffer, size, nelem, pipeto);
+	}
+
 	if (handle == stdout || handle == stderr)
 	{
 		if (msw_IsDebuggerPresent()) {
-			char mess[1024];
+			char mess[2048];
 			auto nsize = size * nelem;
 			auto* chbuf = (const char*)buffer;
 			while(nsize) {
