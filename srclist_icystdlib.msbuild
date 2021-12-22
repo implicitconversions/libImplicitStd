@@ -14,6 +14,7 @@
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/msw_app_console_init.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/posix_file.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/StringUtil.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/appSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/msw_app_console_init.h" />
@@ -29,5 +30,7 @@
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/fs.h" />
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/jfmt.h" />
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/logger_local_buffer.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/appSettings.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/appSettingsMap.h" />
   </ItemGroup>
 </Project>
