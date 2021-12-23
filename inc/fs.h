@@ -34,6 +34,11 @@ std::string absolute			(const path& fspath);
 std::vector<path>	directory_iterator(const path& path);
 void				directory_iterator(const std::function<void (const fs::path& path)>& func, const path& path);
 
+
+#if __cplusplus >= 202000
+inline std::string PathFromString		(const char8_t* path) { return PathFromString((char*)path); }
+#endif
+
 class path
 {
 protected:
@@ -59,6 +64,24 @@ public:
 		uni_path_ = fs::PathFromString(src);
 		update_native_path();
 	}
+
+#if __cplusplus > 202000
+	path(const char8_t* src) {
+		uni_path_ = fs::PathFromString(src);
+		update_native_path();
+	}
+
+	template<int len>
+	path(const char8_t (&src)[len]) {
+		uni_path_ = fs::PathFromString(src);
+		update_native_path();
+	}
+
+	path(char8_t* (&src)) {
+		uni_path_ = fs::PathFromString(src);
+		update_native_path();
+	}
+#endif
 
 	template<int len>
 	fs::path& operator=(const char (&src)[len]) {
