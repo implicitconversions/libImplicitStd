@@ -11,7 +11,7 @@ std::map<std::string, std::string> g_map;
 // lazy way to make this code look like a class member, and just in case we want to class it later.
 static auto& m_map = g_map;
 
-void appSetSetting(const std::string& lvalue, const std::string& rvalue) {
+void appSetSetting(const std::string& lvalue, std::string rvalue) {
 	m_map[lvalue] = rvalue;
 }
 

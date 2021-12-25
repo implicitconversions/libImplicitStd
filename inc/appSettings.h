@@ -8,7 +8,7 @@ namespace icyAppSettingsIfc
 {
 	// Caller is responsible for thread locking.
 
-	extern void			appSetSetting		(const std::string& lvalue, const std::string& rvalue);
+	extern void			appSetSetting		(const std::string& lvalue, std::string rvalue);
 	extern void			appRemoveSetting	(const std::string& lvalue);
 	extern std::string	appGetSetting		(const std::string& name);
 	extern std::string	appGetSettingLwr	(const std::string& name);
