@@ -51,6 +51,7 @@ inline const char *strcasestr(const char *s, const char *find) {
 // arrays fail).
 #define CaseReturnString(caseName)        case caseName: return # caseName
 
+
 // filename illegals, for use with ReplaceCharSet, to replace with underscore (_)
 static const char msw_fname_illegalChars[] = "\\/:?\"<>|";
 
