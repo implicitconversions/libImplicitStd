@@ -86,7 +86,7 @@ uint32_t cppStrToU32(const StringConversionMagick& srcmagick, char** endptr) {
 
 int strcpy_ajek(char* dest, int destlen, const char* src)
 {
-    if (!dest || !src) return 0;
+	if (!dest || !src) return 0;
 	if (!destlen) return 0;
 
 	char* ret = dest;

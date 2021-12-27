@@ -7,7 +7,6 @@
 #	include "posix_file_sce.h"
 #endif
 
-#include <cstdint>
 
 // off_t is too poorly defined to be of use. Let's define our own based on intmax_t.
 using x_off_t = intmax_t;
