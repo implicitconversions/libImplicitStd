@@ -153,7 +153,7 @@ namespace StringUtil {
 	inline std::string	ReplaceCase(std::string subject, const std::string& search, const std::string& replace) {
 		const char* pos = subject.data();
 
-		while ((pos = strcasestr(pos, search.c_str()))) {
+		while ((pos = strcasestr(pos, search.c_str())) != 0) {
 			subject.replace(pos-subject.c_str(), search.length(), replace);
 			pos += search.length();
 		}
