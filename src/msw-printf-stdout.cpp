@@ -10,14 +10,27 @@
 
 #include <algorithm>
 
-bool msw_IsDebuggerPresent()
+#include <string_view>
+
+// Convert an UTF8 string to a wide Unicode String
+__nodebug static std::wstring utf8_decode(std::string_view str)
+{
+	if (str.empty()) return {};
+	int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+	std::wstring wstrTo( size_needed, 0 );
+	MultiByteToWideChar                  (CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+	return wstrTo;
+}
+
+__nodebug bool msw_IsDebuggerPresent()
 {
 	return ::IsDebuggerPresent() == TRUE;
 }
 
-void msw_OutputDebugString(const char* fmt)
+__nodebug void msw_OutputDebugString(const char* fmt)
 {
-	::OutputDebugStringA(fmt);
+	// must use OutputDebugStringW() to see UTF8 sequences in the Output window.
+	::OutputDebugStringW(utf8_decode(fmt).c_str());
 }
 
 void msw_OutputDebugStringV(const char* fmt, va_list args)
@@ -30,12 +43,12 @@ void msw_OutputDebugStringV(const char* fmt, va_list args)
 	int len = vsnprintf(buf, sizeof_buf, fmt, args);
 	buf[sizeof_buf-1] = '\0';		// in case vsnprintf overflowed.
 
-	::OutputDebugStringA(buf);
+	::OutputDebugStringW(utf8_decode(buf).c_str());
 
 	if (len >= sizeof_buf) {
 		// Things piped to stderr shouldn't be excessively verbose anyway
 		::OutputDebugStringA("\n");
-		::OutputDebugStringA("(*OutputDebugStringA*) previous message was truncated, see stderr console for full content");
+		::OutputDebugStringA("(*OutputDebugString*) previous message was truncated, see stderr console for full content");
 	}
 }
 #if REDEFINE_PRINTF
@@ -102,7 +115,7 @@ void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
 			}
 		}
 	}
-	
+
 	if (reopen_fn) {
 		freopen(reopen_fn,  mode,  stdhandle);
 	}
@@ -112,7 +125,7 @@ void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
 #if REDEFINE_PRINTF
 
 extern "C" {
-int _fi_redirect_printf(const char* fmt, ...)
+__nodebug int _fi_redirect_printf(const char* fmt, ...)
 {
 	va_list argptr;
 	va_start(argptr, fmt);
@@ -121,7 +134,7 @@ int _fi_redirect_printf(const char* fmt, ...)
 	return result;
 }
 
-int _fi_redirect_fprintf(FILE* handle, const char* fmt, ...)
+__nodebug int _fi_redirect_fprintf(FILE* handle, const char* fmt, ...)
 {
 	va_list argptr;
 	va_start(argptr, fmt);
@@ -158,7 +171,7 @@ int _fi_redirect_vfprintf(FILE* handle, const char* fmt, va_list args)
 	}
 
 	if (1) {
-		if (FILE* pipeto = getOriginalPipeHandle(handle)) {	
+		if (FILE* pipeto = getOriginalPipeHandle(handle)) {
 			va_list argptr;
 			va_copy(argptr, args);
 			result = vfprintf(pipeto, fmt, argptr);
@@ -187,7 +200,7 @@ int _fi_redirect_puts(char const* buffer) {
 int _fi_redirect_fputs(char const* buffer, FILE* handle) {
 	int result = fputs(buffer, handle);
 
-	if (FILE* pipeto = getOriginalPipeHandle(handle)) {	
+	if (FILE* pipeto = getOriginalPipeHandle(handle)) {
 		result = fputs(buffer, pipeto);
 	}
 
@@ -204,7 +217,7 @@ intmax_t _fi_redirect_fwrite(void const* buffer, size_t size, size_t nelem, FILE
 {
 	auto result = fwrite(buffer, size, nelem, handle);
 
-	if (FILE* pipeto = getOriginalPipeHandle(handle)) {	
+	if (FILE* pipeto = getOriginalPipeHandle(handle)) {
 		result = fwrite(buffer, size, nelem, pipeto);
 	}
 

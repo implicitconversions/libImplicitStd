@@ -1,14 +1,17 @@
 
-#if !!PLATFORM_MSW && defined(_MSC_VER)
+#if !!PLATFORM_MSW
 #include <Windows.h>
 #include <Dbghelp.h>
 #include <signal.h>
 #include <cstring>
 #include <cstdio>
+#include <corecrt_startup.h>
 
 #pragma comment (lib, "dbghelp.lib")
 
 #include "msw_app_console_init.h"
+
+MASTER_DEBUGGABLE
 
 // CALL_FIRST means call this exception handler first;
 // CALL_LAST means call this exception handler last
@@ -140,7 +143,7 @@ void SignalHandler(int signal)
 	}
 }
 
-void msw_InitAppForConsole() {
+void msw_InitAbortBehavior() {
 	static bool bRun = 0;
 	if (bRun) return;
 	bRun = 1;
@@ -194,7 +197,15 @@ void msw_InitAppForConsole() {
 	// (note in Win10, popups are disabled by default and cannot be re-enabled anyway)
 	::SetErrorMode(SEM_FAILCRITICALERRORS);
 
-#if !defined(_CONSOLE)
+}
+
+void msw_InitAppForConsole() {
+	static bool bRun = 0;
+	if (bRun) return;
+	bRun = 1;
+
+	msw_InitAbortBehavior();
+
 	// In order to have a windowed mode application behave in a normal way when run from an existing
 	// _Windows 10 console shell_, we have to do this. This is because CMD.exe inside a windows console
 	// doesn't set up its own stdout pipes, causing GetStdHandle(STD_OUTPUT_HANDLE) to return nullptr.
@@ -207,25 +218,77 @@ void msw_InitAppForConsole() {
 	auto prevout = ::GetStdHandle(STD_OUTPUT_HANDLE);
 	auto preverr = ::GetStdHandle(STD_ERROR_HANDLE );
 
-	if (!prevout || !previn) {
+	if (!prevout && !previn) {
 		// this workaround won't capture stdout from DLLs. Nothing we can do about that. The DLL has
 		// to do its own freopen() calls on its own. Sorry folks.
 		// easy solution: don't use cmd.exe or windows shitty terminal!
-		// open outputs as binary to suppress Windows newline corruption (\r mess)
-		if (::AttachConsole(ATTACH_PARENT_PROCESS)) {
-			if (!previn)  { freopen("CONIN$",  "r" , stdin ); }
-			if (!prevout) { freopen("CONOUT$", "wb", stdout); }
-			if (!preverr) { freopen("CONOUT$", "wb", stderr); }
-			msw_set_abort_message(0);
-		}
-		else {
+
+		bool console_attached = 0;
+		bool console_created = 0;
+		console_attached = ::AttachConsole(ATTACH_PARENT_PROCESS);
+
+		if (!console_attached && s_interactive_user_environ) {
 			// stdout is dangling, alloc windows built-in console to visualize it.
 			// This is kind of an "emergency procedure only" option, since this console is
 			// ugly, buggy, and generally limited.
 
-			if (allow_popups) {
-				msw_AllocWinNativeConsole();
+			console_attached = console_created = ::AllocConsole();
+		}
+
+		if (!console_attached) {
+			// Console could fail to allocate on a Jenkins environment, for example.
+			// And in this specific case, the thing we definitely don't want to do is deadlock the
+			// program waiting for input from a non-existant user, so guard it against the interactive_user
+			// environment flag.
+			if (s_interactive_user_environ) {
+				char fmt_buf[256];	// avoid heap.
+				sprintf_s(fmt_buf,
+					"AllocConsole() failed, error=0x%08x\n"
+					"To work-around this problem, please run the application from an existing console, "
+					"by opening Git BASH, MinTTY, or Windows Command Prompt and starting the program there.\n",
+					::GetLastError()
+				);
+
+				auto result = ::MessageBoxA(nullptr, fmt_buf,
+					"AllocConsole Failure",
+					MB_ICONEXCLAMATION | MB_OK
+				);
 			}
+		}
+
+		if (console_attached) {
+			// opt into the new VT100 system supported by Console and Terminal.
+			auto modehack = [](DWORD handle) {
+				DWORD mode;
+				if (auto allocout = ::GetStdHandle(handle)) {
+					GetConsoleMode(allocout, &mode);
+					if (handle == STD_INPUT_HANDLE) {
+						// if we turn these on when attaching to an existing console, it can totally mess up cmd.exe after the process exits.
+						// (and there's no way we can safely undo this when the app is closed)
+						//mode |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT;
+					}
+					else {
+						mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_LVB_GRID_WORLDWIDE;
+					}
+					SetConsoleMode(allocout, mode);
+				}
+			};
+
+			modehack(STD_INPUT_HANDLE);
+			modehack(STD_OUTPUT_HANDLE);
+			modehack(STD_ERROR_HANDLE);
+
+			msw_set_abort_message(0);
+		}
+
+		if (console_created) {
+			// remap standard pipes to a newly-opened console.
+			// _fi_redirect internally will retain the existing pipes when the application was opened, so that
+			// redirections and original TTY/console will also continue to work.
+
+			_fi_redirect_winconsole_handle(stdin,  previn );
+			_fi_redirect_winconsole_handle(stdout, prevout);
+			_fi_redirect_winconsole_handle(stderr, preverr);
 		}
 	}
 
@@ -234,76 +297,44 @@ void msw_InitAppForConsole() {
 	if (getenv("SHLVL")) {
 		msw_set_abort_message(0);
 	}
-#endif
-}
-
-void msw_AllocWinNativeConsole() {
-	// Creates an old-fashioned console window, and enables UTF-8 support by setting a font
-	// that supports all character sets.
-
-	auto previn  = ::GetStdHandle(STD_INPUT_HANDLE );
-	auto prevout = ::GetStdHandle(STD_OUTPUT_HANDLE);
-	auto preverr = ::GetStdHandle(STD_ERROR_HANDLE );
-
-	if (!::AllocConsole()) {
-		// Console could fail to allocate on a Jenkins environment, for example.
-		// And in this specific case, the thing we definitely don't want to do is deadlock the
-		// program waiting for input from a non-existant user, so guard it against the interactive_user
-		// environment flag.
-		if (s_interactive_user_environ) {
-			char fmt_buf[256];	// avoid heap.
-			sprintf_s(fmt_buf,
-				"AllocConsole() failed, error=0x%08x\n"
-				"To work-around this problem, please run the application from an existing console, "
-				"by opening Git BASH, MinTTY, or Windows Command Prompt and starting the program there.\n",
-				::GetLastError()
-			);
-
-			auto result = ::MessageBoxA(nullptr, fmt_buf,
-				"AllocConsole Failure",
-				MB_ICONEXCLAMATION | MB_OK
-			);
-		}
-	}
-
-	// remap standard pipes to a newly-opened console.
-	// _fi_redirect internally will retain the existing pipes when the application was opened, so that
-	// redirections and original TTY/console will also continue to work.
-
-	_fi_redirect_winconsole_handle(stdin,  previn );
-	_fi_redirect_winconsole_handle(stdout, prevout);
-	_fi_redirect_winconsole_handle(stderr, preverr);
 
 	// Set console output to UTF8
+	//  - This will work if the OS is using Windows Terminal instead of Windows Console.
+	//  - This will work if the Windows Console is using a single font that supports all glyphs, but all such fonts
+	//    are hideous and so it's mostly useless. :(
+
 	::SetConsoleCP(CP_UTF8);
 	::SetConsoleOutputCP(CP_UTF8);
-
-#if 0
-	// Set console font to MS Gothic, which supports all charsets (CJK, Russian, Euro)
-	// This is an ugly font for a console, and we don't really need to display UTF8's for the emulators.
-	CONSOLE_FONT_INFOEX cfi = {};
-	cfi.cbSize = sizeof(cfi);
-	cfi.nFont = 0;
-	cfi.dwFontSize.X = 0;
-	cfi.dwFontSize.Y = 18;
-	cfi.FontFamily = FF_DONTCARE;
-	cfi.FontWeight = FW_NORMAL;
-	wcscpy_s(cfi.FaceName, L"Yu Gothic UI");
-	::SetCurrentConsoleFontEx(::GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
-	::SetCurrentConsoleFontEx(::GetStdHandle(STD_ERROR_HANDLE), FALSE, &cfi);
-#endif
 }
 
-void dynhack() {
-	CONSOLE_FONT_INFOEX cfi = {};
-	cfi.cbSize = sizeof(cfi);
-	cfi.nFont = 0;
-	cfi.dwFontSize.X = 0;
-	cfi.dwFontSize.Y = 18;
-	cfi.FontFamily = FF_DONTCARE;
-	cfi.FontWeight = FW_NORMAL;
-	wcscpy_s(cfi.FaceName, L"Yu Gothic UI");
-	::SetCurrentConsoleFontEx(::GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &cfi);
-	::SetCurrentConsoleFontEx(::GetStdHandle(STD_ERROR_HANDLE), FALSE, &cfi);
-}
+static int _init_abort_behavior(void) {
+	msw_InitAbortBehavior();
+	return 0;
+};
+
+static int _init_console_behavior(void) {
+	msw_InitAppForConsole();
+	return 0;
+};
+
+// .CRT$XIC are the CRT C initializers, and anything run before those won't have stdio available.
+//   This makes .CRT$XID a good spot for our own stuff to run as early as possible, and without crashing.
+// (and I still can't get these to work reliably from a .lib file .. ? --jstine)
+
+__pragma (section(".CRT$XIDA", read));
+__pragma (section(".CRT$XIDB", read));
+
+__declspec(allocate(".CRT$XIDA"))
+static _PIFV init_abort_behavior = _init_abort_behavior;
+
+__declspec(allocate(".CRT$XIDB"))
+static _PIFV init_console_behavior = _init_console_behavior;
+
+// LTCG will deadref these things, so we use lambdas to force persistent references.
+// This works mainly because the lambda needs to be constructed at C++ initializer step in a way that
+// makes it super unlikely that the compiler will ever optimize it away.
+
+static bool deadref1 = []() { return init_abort_behavior; }();
+static bool deadref2 = []() { return init_console_behavior; }();
+
 #endif
