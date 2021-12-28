@@ -84,7 +84,7 @@ uint32_t cppStrToU32(const StringConversionMagick& srcmagick, char** endptr) {
 //     a couple of strings together.  Ugh.  --jstine
 //
 
-int strcpy_ajek(char* dest, int destlen, const char* src)
+__nodebug int strcpy_ajek(char* dest, int destlen, const char* src)
 {
 	if (!dest || !src) return 0;
 	if (!destlen) return 0;
@@ -97,15 +97,16 @@ int strcpy_ajek(char* dest, int destlen, const char* src)
 		if (!src[pos]) return pos;
 		++pos;
 	}
+	//dbg_check(pos == destlen);
+
 	// truncation scenario, ensure null terminator...
-	dbg_check(pos == destlen);
 	dest[destlen-1] = 0;
 	return destlen-1;
 }
 
 namespace StringUtil {
 
-std::string toLower(std::string src)
+__nodebug std::string toLower(std::string src)
 {
 	// UTF8 friendly variety!  Can't use std::transform because tolower() needs to operate on
 	// unsigned character codes.
@@ -115,7 +116,7 @@ std::string toLower(std::string src)
 	return src;
 }
 
-std::string toUpper(std::string src)
+__nodebug std::string toUpper(std::string src)
 {
 	// UTF8 friendly variety!  Can't use std::transform because tolower() needs to operate on
 	// unsigned character codes.
@@ -125,7 +126,7 @@ std::string toUpper(std::string src)
 	return src;
 }
 
-std::string trim(const std::string& s, const char* delims) {
+__nodebug std::string trim(const std::string& s, const char* delims) {
 	int sp = 0;
 	int ep = int(s.length()) - 1;
 	for (; ep >= 0; --ep)
@@ -160,7 +161,7 @@ void AppendFmtV(std::string& result, const StringConversionMagick& fmt, va_list 
 	vsprintf_s(const_cast<char*>(result.data() + curlen), destSize+1, fmt.c_str(), list );
 }
 
-void AppendFmt(std::string& result, const char* fmt, ...)
+__nodebug void AppendFmt(std::string& result, const char* fmt, ...)
 {
 	va_list list;
 	va_start(list, fmt);
@@ -169,18 +170,18 @@ void AppendFmt(std::string& result, const char* fmt, ...)
 }
 
 
-std::string FormatV(const StringConversionMagick& fmt, va_list list)
+__nodebug std::string FormatV(const StringConversionMagick& fmt, va_list list)
 {
 	std::string result;
 	AppendFmtV(result, fmt, list);
 	return result;
 }
 
-std::string Format(const char* fmt, ...)
+__nodebug std::string Format(const char* fmt, ...)
 {
 	va_list list;
 	va_start(list, fmt);
-	std::string result = StringUtil::FormatV(fmt, list);
+	auto result = StringUtil::FormatV(fmt, list);
 	va_end(list);
 	return result;
 }

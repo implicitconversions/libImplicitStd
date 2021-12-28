@@ -105,21 +105,21 @@ struct StringConversionMagick
 
 namespace StringUtil {
 
-	inline bool BeginsWith(const std::string& left, char right) {
+	__nodebug inline bool BeginsWith(const std::string& left, char right) {
 		return !left.empty() && (left[0] == right);
 	}
 
-	inline bool BeginsWith(const std::string& left, const std::string& right) {
+	__nodebug inline bool BeginsWith(const std::string& left, const std::string& right) {
 		return left.compare( 0, right.length(), right) == 0;
 	}
 
-	inline bool EndsWith(const std::string& left, const std::string& right) {
+	__nodebug inline bool EndsWith(const std::string& left, const std::string& right) {
 		intmax_t startpos = left.length() - right.length();
 		if (startpos<0) return false;
 		return left.compare( startpos, right.length(), right ) == 0;
 	}
 
-	inline bool EndsWith(const std::string& left, char right) {
+	__nodebug inline bool EndsWith(const std::string& left, char right) {
 		return !left.empty() && (left[left.length()-1] == right);
 	}
 
@@ -164,7 +164,8 @@ namespace StringUtil {
 extern uint32_t cppStrToU32(const StringConversionMagick& src, char** endptr = nullptr);
 
 extern int strcpy_ajek(char* dest, int destlen, const char* src);
-template<int size> inline int strcpy_ajek(char (&dest)[size], const char* src)
+template<int size> __nodebug
+int strcpy_ajek(char (&dest)[size], const char* src)
 {
 	return strcpy_ajek(dest, size, src);
 }
@@ -190,10 +191,10 @@ template<int size> inline int strcpy_ajek(char (&dest)[size], const char* src)
 
 // Custom string to integer conversions: sj for intmax_t, uj for uintmax_t
 // Also support implicit conversion from std::string
-inline intmax_t strtosj(const StringConversionMagick& src, char** meh, int radix) {
+__nodebug inline intmax_t strtosj(const StringConversionMagick& src, char** meh, int radix) {
 	return strtoll(src.c_str(), meh, radix);
 }
 
-inline uintmax_t strtouj(const StringConversionMagick& src, char** meh, int radix) {
+__nodebug inline uintmax_t strtouj(const StringConversionMagick& src, char** meh, int radix) {
 	return strtoul(src.c_str(), meh, radix);
 }
