@@ -25,6 +25,7 @@
 #  include <stdint.h>
 #	define _extern_c
 #endif
+
 _extern_c int _fi_redirect_printf   (const char* fmt, ...);
 _extern_c int _fi_redirect_vfprintf (FILE* handle, const char* fmt, va_list args);
 _extern_c int _fi_redirect_fprintf  (FILE* handle, const char* fmt, ...);
@@ -41,5 +42,14 @@ _extern_c void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);
 #define fputs(msg, fp)			_fi_redirect_fputs   (msg, fp)
 #define fputc(ch, fp)			_fi_redirect_fputc   (ch, fp)
 #define fwrite(buf, sz, nx, fp) _fi_redirect_fwrite  (buf, sz, nx, fp)
-#undef _extern_c
+
+#if defined(errprintf)
+#	undef errprintf
 #endif
+
+// the redirected implementations typically ensure stdout is flushed before writing to stderr, so our error
+// macros here can skip that paperwork.
+#define errprintf(msg, ...) fprintf(stderr, "" msg, ## __VA_ARGS__)
+
+#undef _extern_c
+#endif		// REDEFINE_PRINTF
