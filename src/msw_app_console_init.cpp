@@ -186,6 +186,12 @@ void msw_InitAbortBehavior() {
 	if (automated_flag  ) allow_popups   = (automated_flag  [0] != '0');
 	if (noninteract_flag) allow_popups   = (noninteract_flag[0] != '0');
 
+	// when MSYS BASH shell is present somewhere, assume the user doesn't want or need popups.
+	// (can be overridden by CLI switch in the main app, etc)
+	if (getenv("SHLVL")) {
+		allow_popups = 0;
+	}
+
 	msw_set_abort_message(allow_popups);
 
 	// Tell the system not to display the critical-error-handler message box.
@@ -196,19 +202,59 @@ void msw_InitAbortBehavior() {
 	// Translation: disable this silly ill-advised legacy behavior. --jstine
 	// (note in Win10, popups are disabled by default and cannot be re-enabled anyway)
 	::SetErrorMode(SEM_FAILCRITICALERRORS);
-
 }
 
-void msw_InitAppForConsole() {
-	static bool bRun = 0;
-	if (bRun) return;
-	bRun = 1;
+static void modehack(DWORD handle, bool allocated) {
+	DWORD mode;
+	if (auto allocout = ::GetStdHandle(handle)) {
+		GetConsoleMode(allocout, &mode);
+		if (handle == STD_INPUT_HANDLE) {
+			// if we turn these on when attaching to an existing console, it can totally mess up cmd.exe after the process exits.
+			// (and there's no way we can safely undo this when the app is closed)
+			if (allocated) {
+				mode |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT;
+			}
+		}
+		else {
+			mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_LVB_GRID_WORLDWIDE;
+		}
+		SetConsoleMode(allocout, mode);
+	}
+};
 
-	msw_InitAbortBehavior();
+bool msw_AttachConsole(int pid) {
+	auto previn  = ::GetStdHandle(STD_INPUT_HANDLE );
+	auto prevout = ::GetStdHandle(STD_OUTPUT_HANDLE);
+	auto preverr = ::GetStdHandle(STD_ERROR_HANDLE );
 
+	if (!prevout || !previn) {
+		if (::AttachConsole(pid)) {
+			modehack(STD_INPUT_HANDLE , false);
+			modehack(STD_OUTPUT_HANDLE, false);
+			modehack(STD_ERROR_HANDLE , false);
+
+			// remap standard pipes to a newly-opened console.
+			// _fi_redirect internally will retain the existing pipes when the application was opened, so that
+			// redirections and original TTY/console will also continue to work.
+
+			_fi_redirect_winconsole_handle(stdin,  previn );
+			_fi_redirect_winconsole_handle(stdout, prevout);
+			_fi_redirect_winconsole_handle(stderr, preverr);
+
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void msw_AllocConsoleForWindowedApp() {
 	// In order to have a windowed mode application behave in a normal way when run from an existing
 	// _Windows 10 console shell_, we have to do this. This is because CMD.exe inside a windows console
 	// doesn't set up its own stdout pipes, causing GetStdHandle(STD_OUTPUT_HANDLE) to return nullptr.
+	//
+	// this workaround is for attempting to recover the stdout from an app built as a Windowed application,
+	// which normally gets piped to oblivion. This workaround won't capture stdout from DLLs though. Nothing
+	// we can do about that. The DLL has to do its own freopen() calls on its own. Sorry folks.
 	//
 	// MINTTY: This problem does not occur on mintty or other conemu or other non-shitty console apps.
 	// And we must take care _not_ to override their own pipe redirection bindings. This is why we only
@@ -218,93 +264,29 @@ void msw_InitAppForConsole() {
 	auto prevout = ::GetStdHandle(STD_OUTPUT_HANDLE);
 	auto preverr = ::GetStdHandle(STD_ERROR_HANDLE );
 
-	if (!prevout && !previn) {
-		// this workaround won't capture stdout from DLLs. Nothing we can do about that. The DLL has
-		// to do its own freopen() calls on its own. Sorry folks.
-		// easy solution: don't use cmd.exe or windows shitty terminal!
+	if (::AllocConsole()) {
+		// opt into the new VT100 system supported by Console and Terminal.
 
-		bool console_attached = 0;
-		bool console_created = 0;
-		console_attached = ::AttachConsole(ATTACH_PARENT_PROCESS);
-
-		if (!console_attached && s_interactive_user_environ) {
-			// stdout is dangling, alloc windows built-in console to visualize it.
-			// This is kind of an "emergency procedure only" option, since this console is
-			// ugly, buggy, and generally limited.
-
-			console_attached = console_created = ::AllocConsole();
-		}
-
-		if (!console_attached) {
-			// Console could fail to allocate on a Jenkins environment, for example.
-			// And in this specific case, the thing we definitely don't want to do is deadlock the
-			// program waiting for input from a non-existant user, so guard it against the interactive_user
-			// environment flag.
-			if (s_interactive_user_environ) {
-				char fmt_buf[256];	// avoid heap.
-				sprintf_s(fmt_buf,
-					"AllocConsole() failed, error=0x%08x\n"
-					"To work-around this problem, please run the application from an existing console, "
-					"by opening Git BASH, MinTTY, or Windows Command Prompt and starting the program there.\n",
-					::GetLastError()
-				);
-
-				auto result = ::MessageBoxA(nullptr, fmt_buf,
-					"AllocConsole Failure",
-					MB_ICONEXCLAMATION | MB_OK
-				);
-			}
-		}
-
-		if (console_attached) {
-			// opt into the new VT100 system supported by Console and Terminal.
-			auto modehack = [](DWORD handle) {
-				DWORD mode;
-				if (auto allocout = ::GetStdHandle(handle)) {
-					GetConsoleMode(allocout, &mode);
-					if (handle == STD_INPUT_HANDLE) {
-						// if we turn these on when attaching to an existing console, it can totally mess up cmd.exe after the process exits.
-						// (and there's no way we can safely undo this when the app is closed)
-						//mode |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT;
-					}
-					else {
-						mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_LVB_GRID_WORLDWIDE;
-					}
-					SetConsoleMode(allocout, mode);
-				}
-			};
-
-			modehack(STD_INPUT_HANDLE);
-			modehack(STD_OUTPUT_HANDLE);
-			modehack(STD_ERROR_HANDLE);
-
-			msw_set_abort_message(0);
-		}
-
-		if (console_created) {
-			// remap standard pipes to a newly-opened console.
-			// _fi_redirect internally will retain the existing pipes when the application was opened, so that
-			// redirections and original TTY/console will also continue to work.
-
-			_fi_redirect_winconsole_handle(stdin,  previn );
-			_fi_redirect_winconsole_handle(stdout, prevout);
-			_fi_redirect_winconsole_handle(stderr, preverr);
-		}
+		modehack(STD_INPUT_HANDLE , true);
+		modehack(STD_OUTPUT_HANDLE, true);
+		modehack(STD_ERROR_HANDLE , true);
 	}
 
-	// when MSYS BASH shell is present somewhere, assume the user doesn't want or need popups.
-	// (can be overridden by CLI switch in the main app, etc)
-	if (getenv("SHLVL")) {
-		msw_set_abort_message(0);
-	}
+	// remap standard pipes to a newly-opened console.
+	// _fi_redirect internally will retain the existing pipes when the application was opened, so that
+	// redirections and original TTY/console will also continue to work.
 
-	// Set console output to UTF8
-	//  - This will work if the OS is using Windows Terminal instead of Windows Console.
-	//  - This will work if the Windows Console is using a single font that supports all glyphs, but all such fonts
-	//    are hideous and so it's mostly useless. :(
+	_fi_redirect_winconsole_handle(stdin,  previn );
+	_fi_redirect_winconsole_handle(stdout, prevout);
+	_fi_redirect_winconsole_handle(stderr, preverr);
+}
 
+void msw_SetConsoleCP() {
 	::SetConsoleCP(CP_UTF8);
 	::SetConsoleOutputCP(CP_UTF8);
+
+	modehack(STD_OUTPUT_HANDLE, false);
+	modehack(STD_ERROR_HANDLE , false);
 }
 
 static int _init_abort_behavior(void) {
@@ -313,7 +295,7 @@ static int _init_abort_behavior(void) {
 };
 
 static int _init_console_behavior(void) {
-	msw_InitAppForConsole();
+	msw_SetConsoleCP();
 	return 0;
 };
 
