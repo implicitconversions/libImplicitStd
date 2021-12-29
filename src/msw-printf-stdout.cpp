@@ -57,6 +57,7 @@ void msw_OutputDebugStringV(const char* fmt, va_list args)
 #	undef fprintf
 #	undef puts
 #	undef fputs
+#	undef fputc
 #   undef fwrite
 #endif
 
@@ -208,6 +209,25 @@ int _fi_redirect_fputs(char const* buffer, FILE* handle) {
 	{
 		if (msw_IsDebuggerPresent()) {
 			msw_OutputDebugString(buffer);
+		}
+	}
+	return result;
+}
+
+int _fi_redirect_fputc(int ch, FILE* handle) {
+	int result = fputc(ch, handle);
+
+	if (FILE* pipeto = getOriginalPipeHandle(handle)) {
+		result = fputc(ch, pipeto);
+	}
+
+	if (handle == stdout || handle == stderr)
+	{
+		if (msw_IsDebuggerPresent()) {
+			// if someone passes a UTF32 char in then we have to do something annoying here to
+			// convert it to UTF8, I think. ugh. For now I'm happy to just handle the common case, '\n'
+			char meh[2] = { (char)ch, 0 };
+			msw_OutputDebugString(meh);
 		}
 	}
 	return result;

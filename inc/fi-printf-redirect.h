@@ -30,14 +30,16 @@ _extern_c int _fi_redirect_vfprintf (FILE* handle, const char* fmt, va_list args
 _extern_c int _fi_redirect_fprintf  (FILE* handle, const char* fmt, ...);
 _extern_c int _fi_redirect_puts     (char const* _Buffer);
 _extern_c int _fi_redirect_fputs    (char const* _Buffer, FILE* _Stream);
+_extern_c int _fi_redirect_fputc    (int ch, FILE* _Stream);
 _extern_c intmax_t _fi_redirect_fwrite(void const* src, size_t, size_t, FILE* fp);
 _extern_c void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);	// expects result of GetStdHandle
 
 #define printf(fmt, ...)		_fi_redirect_printf  (fmt, ## __VA_ARGS__)
 #define fprintf(fp, fmt, ...)	_fi_redirect_fprintf (fp, fmt, ## __VA_ARGS__)
 #define vfprintf(fp, fmt, args)	_fi_redirect_vfprintf(fp, fmt, args)
-#define puts(msg)				_fi_redirect_puts    (msg);
-#define fputs(msg, fp)			_fi_redirect_fputs   (msg, fp);
+#define puts(msg)				_fi_redirect_puts    (msg)
+#define fputs(msg, fp)			_fi_redirect_fputs   (msg, fp)
+#define fputc(ch, fp)			_fi_redirect_fputc   (ch, fp)
 #define fwrite(buf, sz, nx, fp) _fi_redirect_fwrite  (buf, sz, nx, fp)
 #undef _extern_c
 #endif
