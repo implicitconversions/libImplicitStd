@@ -59,6 +59,14 @@ inline void ConfigParseFile(FILE* fp, const ConfigParseAddFunc& push_item) {
 }
 
 inline void ConfigParseFile(const char* path, const ConfigParseAddFunc& push_item) {
+	if (!path || !path[0])
+		return;
+
+	if (fs::is_directory(path)) {
+		ICY_LOG("[skipped] '%s': is a directory, not a file.", path);
+		return;
+	}
+
 	if (!fs::exists(path)) {
 		ICY_LOG("[skipped] '%s': not present.", path);
 		return;
