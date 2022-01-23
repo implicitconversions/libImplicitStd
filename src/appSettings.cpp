@@ -25,6 +25,12 @@ std::string appGetSetting(const std::string& name) {
 	return it->second;
 }
 
+std::tuple<std::string, bool> appGetSettingTuple(const std::string& name) {
+	auto it = m_map.find(name);
+	if (it == m_map.end()) return {};
+	return { it->second, true };
+}
+
 std::string appGetSettingLwr(const std::string& name) {
 	auto it = m_map.find(name);
 	if (it == m_map.end()) return {};
