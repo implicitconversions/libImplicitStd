@@ -36,6 +36,10 @@ struct logger_local_buffer
 
 	void write_to (FILE* fp) const;
 
+	char const* c_str() const {
+		return longbuf ? longbuf->c_str() : buffer;
+	}
+
 	~logger_local_buffer() {
 		delete longbuf;
 	}

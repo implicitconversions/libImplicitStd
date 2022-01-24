@@ -2,7 +2,6 @@
 #if PLATFORM_MSW
 #define NOMINMAX
 #include <Windows.h>
-#include "fi-printf-redirect.h"
 
 #include <ios>
 #include <io.h>

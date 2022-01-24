@@ -35,12 +35,12 @@ public:
 	}
 };
 
-#define _defer_expand_counter_2(func, count) \
-	auto anon_defer_lambda_ ## count = [&]() { func; }; \
-	auto anon_defer_        ## count = _impl_anon_defer_t { anon_defer_lambda_ ## count }
+#define _defer_expand_counter_2(func, lineno) \
+	auto anon_defer_lambda_ ## lineno = [&]() { func; }; \
+	auto anon_defer_        ## lineno = _impl_anon_defer_t { anon_defer_lambda_ ## lineno }
 
-#define _defer_expand_counter_1(func, count) _defer_expand_counter_2(func, count)
+#define _defer_expand_counter_1(func, lineno) _defer_expand_counter_2(func, lineno)
 
 // defers a statement until the end of the current lexical scope. The parameter given must
 // be a valid statement. Variables or pointers to functions are not permissible.
-#define Defer(function_content)   _defer_expand_counter_1(function_content, __COUNTER__ )
+#define Defer(function_content)   _defer_expand_counter_1(function_content, __LINE__ )
