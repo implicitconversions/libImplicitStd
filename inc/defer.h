@@ -3,53 +3,44 @@
 #include <functional>
 
 // -----------------------------------------------------------------------------------------------
-// Defer (macro) / Defer_t (struct)
-//
-// Inspired by Golang's 'defer' keyword.  Allows binding a lambda to be executed when the current
-// scope of the deferral's creation is left.  This still differs from Golang `defer`:
-//
-//    - Golang defer executes at the end of function scope.
-//    - Our C++ Defer executes at the end of current lexical scope.
-//
-// Advantages:
-//   and also allows defining a custom deletion/destruction action without having to create
-//   custom wrapper class.  If you want a long-winded version, then use Defer_t directly.
-struct Defer_t {
-	std::function<void()>   m_func;
+// Defer (macro) / _impl_anon_defer_t (struct)
 
+// Execute a function or lambda at the end of current lexical scope.
+// This operates as an anonymous version of std::scope_exit with some additional function template assumptions to
+// improve code gen:
+//   - lambda lifetime is well-defined
+//   - anonymous object cannot be referenced
+//   - anonymous operation is not dismissable
+//   - non-const reference storage used to disable accepting temporaries
+//
+template<typename T>
+class _impl_anon_defer_t
+{
 private:
-	Defer_t(const Defer_t& rvalue)         = delete;
-	void operator=(const Defer_t& rvalue)  = delete;
+	T& m_defer;
 
 public:
-	Defer_t(Defer_t&& rvalue) {
-		m_func = std::move(rvalue.m_func);
-		rvalue.m_func = nullptr;
+	explicit _impl_anon_defer_t(T& deferCb)
+		: m_defer(deferCb)
+	{
 	}
 
-	Defer_t() throw() { }
-	Defer_t(const std::function<void()>& func) throw() {
-		m_func = func;
-	}
+	_impl_anon_defer_t(T&& fnDestruct) = delete;
+	_impl_anon_defer_t(_impl_anon_defer_t const&) = delete;
+	_impl_anon_defer_t(_impl_anon_defer_t&&) = delete;
 
-	~Defer_t() {
-		m_func();
-	}
-
-	void Bind(const std::function<void()>& func) {
-		m_func = func;
+	~_impl_anon_defer_t()
+	{
+		m_defer();
 	}
 };
 
-// -----------------------------------------------------------------------------------------------
-// Defer Macros
-//
-// DeferL  - Accepts a lambda or a function pointer as the parameter.
-//
-// Defer - This has the lambda syntax and semi-colon baked-in on purpose.  The point of this macro is maximum
-//   brevity for the most common case usage, which is to free a pointer or release a handle.
+#define _defer_expand_counter_2(func, count) \
+	auto anon_defer_lambda_ ## count = [&]() { func; }; \
+	auto anon_defer_        ## count = _impl_anon_defer_t { anon_defer_lambda_ ## count }
 
-#define _defer_expand_counter_2(func,count) Defer_t defer_anon_ ## count( func )
-#define _defer_expand_counter_1(func,count) _defer_expand_counter_2(func, count)
-#define DeferL(func) _defer_expand_counter_1(func, __COUNTER__)
-#define Defer(function_content) DeferL( [&]() { function_content; } )
+#define _defer_expand_counter_1(func, count) _defer_expand_counter_2(func, count)
+
+// defers a statement until the end of the current lexical scope. The parameter given must
+// be a valid statement. Variables or pointers to functions are not permissible.
+#define Defer(function_content)   _defer_expand_counter_1(function_content, __COUNTER__ )
