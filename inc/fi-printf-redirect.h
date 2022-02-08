@@ -49,7 +49,7 @@ _extern_c void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);
 
 // the redirected implementations typically ensure stdout is flushed before writing to stderr, so our error
 // macros here can skip that paperwork.
-#define errprintf(msg, ...) fprintf(stderr, "" msg, ## __VA_ARGS__)
+#define errprintf(msg, ...) (fprintf(stderr, "" msg, ## __VA_ARGS__))
 
 #undef _extern_c
 #endif		// REDEFINE_PRINTF
