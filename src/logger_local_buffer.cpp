@@ -2,7 +2,7 @@
 #include <cstdarg>
 
 void logger_local_buffer::append(const char* msg) {
-	if (!msg) return;
+	if (!msg || !msg[0]) return;
 
 	// strncpy and strcpy_s have either perf or logical problems, so we have to
 	// roll our own that does what we want...
@@ -37,7 +37,7 @@ void logger_local_buffer::append(const char* msg) {
 }
 
 void logger_local_buffer::appendfv(const char* fmt, va_list args) {
-	if (!fmt) return;
+	if (!fmt || !fmt[0]) return;
 
 	int expected_len = 0;
 	if (!longbuf) {
@@ -87,10 +87,12 @@ void logger_local_buffer::append(char ch) {
 
 void logger_local_buffer::write_to(FILE* pipe) const
 {
-	// windows will flush stdout and stderr out-of-order if we don't explicitly flush everything first.
-	if (pipe == stderr) { fflush(nullptr); }
+	// windows will flush stdout and stderr out-of-order if we don't explicitly flush stdout first.
+	// also, stderr should be unbuffered, but this behavior can vary by platform.
+
+	if (pipe == stderr) { fflush(stdout); }
 	fputs(longbuf ? longbuf->c_str() : buffer, pipe);
-	if (pipe == stderr) { fflush(nullptr); }
+	if (pipe == stderr) { fflush(stderr); }
 }
 
 void logger_local_buffer::clear() {
