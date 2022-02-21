@@ -45,7 +45,7 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname)
 
 	MINIDUMP_EXCEPTION_INFORMATION mdei;
 
-	mdei.ThreadId           = GetCurrentThreadId();
+	mdei.ThreadId           = ::GetCurrentThreadId();
 	mdei.ExceptionPointers  = pep;
 	mdei.ClientPointers     = FALSE;
 
