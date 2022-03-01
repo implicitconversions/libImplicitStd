@@ -1,19 +1,16 @@
-#pragma once
 #include <string>
 #include <vector>
 #include <fstream>
 #include <algorithm>
 
+#include "ConfigParse.h"
 #include "StringUtil.h"
 #include "fs.h"
 #include "defer.h"
 
-#include "icy_assert.h"
 #include "icy_log.h"
 
-using ConfigParseAddFunc = std::function<void(const std::string&, const std::string&)>;
-
-inline bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, int linenum=0) {
+bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, int linenum) {
 	auto trim = [](const std::string& s) {
 		// Treat quotes as whitespace when parsing CLI options from files.
 		return StringUtil::trim(s," \t\r\n\"");
@@ -35,54 +32,25 @@ inline bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_
 		return 1;
 	}
 	else {
-		ICY_LOG_ERROR("Skipping invalid entry (line %d): %s", linenum, line.c_str());
-
-		// Malformed config file settings should never be present in a verified package file.
-		// this is a special case where we want a MASTER build to fail outright but it's OK to let any
-		// other build type proceed without failure.
-
-		#if BUILD_MASTER
-		master_abort("Package configuration is malformed or corrupted.");
-		#endif
+		log_error("Skipping invalid entry (line %d): %s", linenum, line.c_str());
 	}
 	return 0;
 }
 
-inline void ConfigParseFile(FILE* fp, const ConfigParseAddFunc& push_item) {
+bool ConfigParseFile(FILE* fp, const ConfigParseAddFunc& push_item) {
 	constexpr int max_buf = 4096;
 	char readbuf[max_buf];
 	auto linenum = 0;
 	while (fgets(readbuf,max_buf,fp)) {
 		linenum++;
-		ConfigParseLine(readbuf, push_item, linenum);
+		if (!ConfigParseLine(readbuf, push_item, linenum)) {
+			return 0;
+		}
 	}
+	return 1;
 }
 
-inline void ConfigParseFile(const char* path, const ConfigParseAddFunc& push_item) {
-	if (!path || !path[0])
-		return;
-
-	if (fs::is_directory(path)) {
-		ICY_LOG("[skipped] '%s': is a directory, not a file.", path);
-		return;
-	}
-
-	if (!fs::exists(path)) {
-		ICY_LOG("[skipped] '%s': not present.", path);
-		return;
-	}
-
-	if (FILE* fp = fopen(path, "rt")) {
-		ICY_LOG("[loading] '%s'", path);
-		ConfigParseFile(fp, push_item);
-		fclose(fp);
-	}
-	else {
-		house_abort("fopen('%s') failed: file is invalid or inaccessible.", path);
-	}
-}
-
-inline void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFunc& push_item) {
+void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFunc& push_item) {
 	// Do not strip quotes when parsing arguments -- the commandline processor (cmd/bash)
 	// will have done that for us already.  Any quotes in the command line are intentional
 	// and would have been provided by the user by way of escaped quotes. --jstine
