@@ -14,9 +14,10 @@
 // mucking up other non-logging string building operations. This is the rationale behind giving it
 // a logger namespace.
 //
+
 struct logger_local_buffer
 {
-	static const int  bufsize = 1536;
+	static constexpr int  bufsize = 1536;
 
 	char			buffer[bufsize + 2];				// always leave room for newline and /0
 	int				wpos	= 0;
