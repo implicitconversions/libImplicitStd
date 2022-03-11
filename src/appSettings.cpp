@@ -2,7 +2,7 @@
 #include "appSettings.h"
 #include "appSettingsMap.h"
 #include "StringUtil.h"
-
+#include "icy_log.h"
 
 namespace icyAppSettingsIfc
 {
@@ -76,4 +76,15 @@ bool appGetSettingBool(const std::string& name, bool nonexist_result) {
 	return exists ? value : nonexist_result;
 }
 
+bool appSettingDeprecationCheck(std::string const& name, std::string const& deprecated_alias) {
+	if (auto [depr_value, depr_exists] = appGetSettingTuple(deprecated_alias); depr_exists) {
+		if (!appHasSetting(name)) {
+			appSetSetting(name, depr_value);
+		}
+		return true;
+		//log_host("CLI Option '%s' is deprecated. Please use '%s' instead.", name.c_str());
+	}
+	return false;
 }
+
+} // namespace
