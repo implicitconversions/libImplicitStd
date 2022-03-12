@@ -9,8 +9,9 @@
 #include "defer.h"
 
 #include "icy_log.h"
+#include "icy_assert.h"
 
-bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, int linenum) {
+bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, ConfigParseContext const& ctx) {
 	auto trim = [](const std::string& s) {
 		// Treat quotes as whitespace when parsing CLI options from files.
 		return StringUtil::trim(s," \t\r\n\"");
@@ -22,6 +23,43 @@ bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, i
 	if (line[0] == ';') return 1;
 	if (line[0] == '#') return 1;
 
+	// support for !include "something-else.txt"
+	if (line[0] == '!') {
+		// Shebang command.
+		bool isRequired = line.substr(1) == "require";
+		if (isRequired || line.substr(1) == "include") {
+			auto cwd = ctx.fullpath.dirname();
+			auto pos = line.find(" \t");
+			auto include_filename = trim(line.substr(pos + 1 + 1));
+			auto include_fullpath = cwd / include_filename;
+
+			if (fs::is_directory(include_fullpath)) {
+				log_error("%s(%d): invalid !%s directive, %s is a directory.",
+					ctx.fullpath.c_str(), ctx.linenum, isRequired ? "require" : "include", include_fullpath.uni_string().c_str()
+				);
+				return 0;
+			}
+
+			if (FILE* fp = fopen(include_fullpath, "rt")) {
+				Defer(fclose(fp));
+				log_host("!%s '%s'", isRequired ? "require" : "include", include_fullpath.uni_string().c_str());
+				return ConfigParseFile(fp, push_item, {include_fullpath});
+			}
+			else {
+				if (isRequired) {
+					auto err = errno;
+					log_error("%s(%d): %s could not be opened for reading: %s",
+						ctx.fullpath.c_str(), ctx.linenum, include_fullpath.uni_string().c_str(),
+						strerror(err)
+					);
+					return 0;
+				}
+
+			}
+		}
+		return 1;
+	}
+
 	// skip empty lines
 	if (line.length() == 0)
 		return 1;
@@ -32,18 +70,18 @@ bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, i
 		return 1;
 	}
 	else {
-		log_error("Skipping invalid entry (line %d): %s", linenum, line.c_str());
+		log_error("%s(%d): syntax error parsing: %s", ctx.fullpath.c_str(), ctx.linenum, line.c_str());
 	}
 	return 0;
 }
 
-bool ConfigParseFile(FILE* fp, const ConfigParseAddFunc& push_item) {
+bool ConfigParseFile(FILE* fp, const ConfigParseAddFunc& push_item, ConfigParseContext const& ctx) {
 	constexpr int max_buf = 4096;
 	char readbuf[max_buf];
 	auto linenum = 0;
 	while (fgets(readbuf,max_buf,fp)) {
 		linenum++;
-		if (!ConfigParseLine(readbuf, push_item, linenum)) {
+		if (!ConfigParseLine(readbuf, push_item, { ctx.fullpath, ctx.linenum + linenum })) {
 			return 0;
 		}
 	}
