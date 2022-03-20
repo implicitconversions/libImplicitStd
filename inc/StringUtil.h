@@ -170,7 +170,10 @@ int strcpy_ajek(char (&dest)[size], const char* src)
 	return strcpy_ajek(dest, size, src);
 }
 
-// This verification extension is available as a separate icy-gist since it is non-trivial to implement inline.
+// This verification extension is provided via force-include to help ensure it is exposed to all TUs. If the
+// project does not include the forceinlue then we placebo it here (treating it as an optional static check
+// extension).
+
 #if !defined(VERIFY_PRINTF_ON_MSVC)
 #	define VERIFY_PRINTF_ON_MSVC(...)	(void(0))
 #endif

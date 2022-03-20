@@ -10,6 +10,7 @@
 #pragma comment (lib, "dbghelp.lib")
 
 #include "msw_app_console_init.h"
+#include "LinkSectionComdat.h"
 
 MASTER_DEBUGGABLE
 
@@ -301,22 +302,22 @@ static int _init_console_behavior(void) {
 
 // .CRT$XIC are the CRT C initializers, and anything run before those won't have stdio available.
 //   This makes .CRT$XID a good spot for our own stuff to run as early as possible, and without crashing.
-// (and I still can't get these to work reliably from a .lib file .. ? --jstine)
+//   (as this module is microsoft windows specific, there is no need to port it to other CRT implementations)
 
-__pragma (section(".CRT$XIDA", read));
-__pragma (section(".CRT$XIDB", read));
+__section_declare_ro(".CRT$XIDA");
+__section_declare_ro(".CRT$XIDB");
 
-__declspec(allocate(".CRT$XIDA"))
+__section_item_ro(".CRT$XIDA")
 static _PIFV init_abort_behavior = _init_abort_behavior;
 
-__declspec(allocate(".CRT$XIDB"))
+__section_item_ro(".CRT$XIDB")
 static _PIFV init_console_behavior = _init_console_behavior;
 
-// LTCG will deadref these things, so we use lambdas to force persistent references.
-// This works mainly because the lambda needs to be constructed at C++ initializer step in a way that
-// makes it super unlikely that the compiler will ever optimize it away.
-
-static bool deadref1 = []() { return init_abort_behavior; }();
-static bool deadref2 = []() { return init_console_behavior; }();
+// the linker will deadref these things when doing intra-lib linking. This disables it.
+// (if we compile with CLANG targeting Windows then these will probably get shoved into the section item
+//  above. But that's OK since these don't actually have any meaningful side effects. We don't need to
+//  care where they get run in the init list)
+ForceLinkSymbol(init_abort_behavior   );
+ForceLinkSymbol(init_console_behavior );
 
 #endif
