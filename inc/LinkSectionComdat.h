@@ -18,8 +18,10 @@ struct ForceSymbolToBeLinked
 
 #define _FORCE_LINK_SYMBOL_LINE(p) ForceSymbolToBeLinked ICY_CONCAT(_deadref_, __LINE__) (p)
 
-#define ForceLinkSymbol(p)  _FORCE_LINK_SYMBOL_LINE(p)
-#define ForceLinkLiteral(p) _FORCE_LINK_SYMBOL_LINE("" p)
+#define ForceLinkSymbol(p)             _FORCE_LINK_SYMBOL_LINE(p)
+#define ForceLinkRawLiteral(p)         _FORCE_LINK_SYMBOL_LINE("" p)
+#define ForceLinkLiteral(n, p)         _FORCE_LINK_SYMBOL_LINE("@@_" n ":"  p ":_@@")
+#define ForceLinkDefineAsLiteral(n, d) _FORCE_LINK_SYMBOL_LINE("@@_" n ":" ICY_EVAL(d) ":_@@")
 
 
 // Section Specification.
