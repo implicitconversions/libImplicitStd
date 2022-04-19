@@ -29,3 +29,15 @@ constexpr typename _priv_voidcast<T>::Type void_cast(T ptr)
 {
 	return (typename _priv_voidcast<T>::Type)ptr;
 }
+
+template <typename T> __nodebug
+constexpr intptr_t intptr_cast(T ptr)
+{
+	return (intptr_t)(typename _priv_voidcast<T>::Type)ptr;
+}
+
+template <typename T> __nodebug
+constexpr uintptr_t uintptr_cast(T ptr)
+{
+	return (uintptr_t)(typename _priv_voidcast<T>::Type)ptr;
+}
