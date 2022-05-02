@@ -201,3 +201,13 @@ __nodebug inline intmax_t strtosj(const StringConversionMagick& src, char** meh,
 __nodebug inline uintmax_t strtouj(const StringConversionMagick& src, char** meh, int radix) {
 	return strtoul(src.c_str(), meh, radix);
 }
+
+constexpr uint32_t hash(std::string_view data) noexcept {
+	uint32_t hash = 5381;
+
+	for (auto c : data) {
+		hash = ((hash << 5) + hash) + c;
+	}
+
+	return hash;
+}
