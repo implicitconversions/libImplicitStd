@@ -99,6 +99,11 @@ void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFun
 	for (int i=0; i<argc; ++i) {
 		const char* arg = argv[i];
 		if (!arg[0]) continue;
+		if (!StringUtil::BeginsWith(arg, "--")) {
+			// do not trim any whitespace, this is a positional parameter (not an argument or switch)
+			push_item(lvalue, {});
+			continue;
+		}
 
 		lvalue.clear();
 		rvalue.clear();
