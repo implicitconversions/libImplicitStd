@@ -116,7 +116,7 @@ void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFun
 			rvalue = &arg[ci+1];
 		}
 		else {
-			// allow support for space-delimted parameter assignment.
+			// allow support for space-delimited parameter assignment.
 			if ((i+1 < argc) && !StringUtil::BeginsWith(argv[i+1], "--")) {
 				rvalue = argv[i+1];
 			}
