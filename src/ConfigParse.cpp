@@ -88,6 +88,17 @@ bool ConfigParseFile(FILE* fp, const ConfigParseAddFunc& push_item, ConfigParseC
 	return 1;
 }
 
+void ParseArgumentsToArgcArgv(const std::vector<std::string>& arguments, std::function<void(int argc, const char* argv[])> const& callback) {
+	std::vector<const char*> argv;
+	for (const auto& argument : arguments) {
+		argv.push_back(argument.c_str());
+	}
+	argv.push_back(NULL);
+
+	callback(argv.size() - 1, argv.data());
+}
+
+
 void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFunc& push_item) {
 	// Do not strip quotes when parsing arguments -- the commandline processor (cmd/bash)
 	// will have done that for us already.  Any quotes in the command line are intentional
