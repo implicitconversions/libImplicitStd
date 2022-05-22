@@ -217,7 +217,7 @@ public:
 
 public:
 	[[nodiscard]] __nodebug std::string& raw_modifiable_uni () { return uni_path_; }
-	[[nodiscard]] __nodebug void		 raw_commit_modified() { update_native_path(); }
+	__nodebug void raw_commit_modified() { update_native_path(); }
 
 protected:
 	[[nodiscard]] const std::string& libc_path() const;
