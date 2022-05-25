@@ -25,7 +25,7 @@
 
 #if !defined(VERIFY_PRINTF_ON_MSVC)
 #	if ENABLE_PRINTF_VERIFY_CHECK_ON_MSVC
-#		define VERIFY_PRINTF_ON_MSVC(...)	(0 && snprintf(nullptr, 0, ## __VA_ARGS__))
+#		define VERIFY_PRINTF_ON_MSVC(...)	(0 && snprintf(nullptr, 0 __VA_OPT__(,) __VA_ARGS__))
 #		if defined(__cplusplus)
 			// in C++ we can allow macros that optionally take a format parameter, typical of macros that
 			// translate an empty format into a newline or such.
