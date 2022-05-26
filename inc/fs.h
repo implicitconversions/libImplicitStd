@@ -34,7 +34,7 @@ std::vector<path>	directory_iterator(const path& path);
 void				directory_iterator(const std::function<void (const fs::path& path)>& func, const path& path);
 
 
-#if __cplusplus >= 202000
+#if HAS_CHAR8_T
 inline std::string PathFromString		(const char8_t* path) { return PathFromString((char*)path); }
 #endif
 
@@ -64,7 +64,7 @@ public:
 		update_native_path();
 	}
 
-#if __cplusplus > 202000
+#if HAS_CHAR8_T	
 	path(const char8_t* src) {
 		uni_path_ = fs::PathFromString(src);
 		update_native_path();
