@@ -12,6 +12,12 @@
 
 namespace fs {
 
+struct ReadSeekInterface {
+	std::function<intmax_t(void* dest, intmax_t size)>    read;
+	std::function<intmax_t(intmax_t pos, uint8_t whence)> seek;
+	std::string FileObjectName;
+};
+
 class path;
 
 bool		IsMswPathSep		(char c);
@@ -164,6 +170,11 @@ public:
 		if (StringUtil::BeginsWith(uni_path_, "/dev/tty/" )) return 1;
 
 		return 0;
+	}
+
+	// typical use case is starts_with argument should always begin with a forward slash "/"
+	bool starts_with(std::string const& rval) {
+		return StringUtil::BeginsWith(uni_path_, rval);
 	}
 
 	// POSIX style alias for C++ 'parent_path()'

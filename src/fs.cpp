@@ -1,8 +1,14 @@
 
 #include <string>
+
 #include "icy_log.h"
 #include "icy_assert.h"
 #include "fs.h"
+
+#if PLATFORM_MSW
+#	include <sys/types.h>
+#	include <sys/stat.h>
+#endif
 
 #if !defined(elif)
 #	define elif		else if
