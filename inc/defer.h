@@ -44,3 +44,10 @@ public:
 // defers a statement until the end of the current lexical scope. The parameter given must
 // be a valid statement. Variables or pointers to functions are not permissible.
 #define Defer(function_content)   _defer_expand_counter_1(function_content, __LINE__ )
+
+template<typename T>
+T* ReleaseDefer(T* (&ptr)) {
+	auto result = ptr;
+	ptr = nullptr;
+	return result;
+}
