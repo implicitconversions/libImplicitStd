@@ -27,12 +27,11 @@ bool		create_directory	(const path& path);
 bool		is_device			(const path& path);
 std::string replace_extension	(const std::string& srcpath, const std::string& ext);
 std::string remove_extension	(const std::string& srcpath, const std::string& ext_to_remove);
-bool		stat				(const path& path, struct stat& st);
+bool		stat				(const path& path, struct stat& st);		// use posix_stat instead. (this provided only for API compat with std::filesystem)
 std::string absolute			(const path& fspath);
 
 std::vector<path>	directory_iterator(const path& path);
 void				directory_iterator(const std::function<void (const fs::path& path)>& func, const path& path);
-
 
 #if HAS_CHAR8_T
 inline std::string PathFromString		(const char8_t* path) { return PathFromString((char*)path); }
@@ -214,7 +213,6 @@ public:
 	__nodebug static std::string asLibcStr(const fs::path& src) {
 		return src.asLibcStr();
 	}
-
 public:
 	[[nodiscard]] __nodebug std::string& raw_modifiable_uni () { return uni_path_; }
 	__nodebug void raw_commit_modified() { update_native_path(); }
