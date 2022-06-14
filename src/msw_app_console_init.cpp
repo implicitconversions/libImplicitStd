@@ -1,16 +1,14 @@
 
-#if !!PLATFORM_MSW
+#if PLATFORM_MSW
 #include <Windows.h>
 #include <Dbghelp.h>
 #include <signal.h>
 #include <cstring>
 #include <cstdio>
-#include <corecrt_startup.h>
 
 #pragma comment (lib, "dbghelp.lib")
 
 #include "msw_app_console_init.h"
-#include "LinkSectionComdat.h"
 
 MASTER_DEBUGGABLE
 
@@ -289,35 +287,5 @@ void msw_SetConsoleCP() {
 	modehack(STD_OUTPUT_HANDLE, false);
 	modehack(STD_ERROR_HANDLE , false);
 }
-
-static int _init_abort_behavior(void) {
-	msw_InitAbortBehavior();
-	return 0;
-};
-
-static int _init_console_behavior(void) {
-	msw_SetConsoleCP();
-	return 0;
-};
-
-// .CRT$XIC are the CRT C initializers, and anything run before those won't have stdio available.
-//   This makes .CRT$XID a good spot for our own stuff to run as early as possible, and without crashing.
-//   (as this module is microsoft windows specific, there is no need to port it to other CRT implementations)
-
-__section_declare_ro(".CRT$XIDA");
-__section_declare_ro(".CRT$XIDB");
-
-__section_item_ro(".CRT$XIDA")
-static _PIFV init_abort_behavior = _init_abort_behavior;
-
-__section_item_ro(".CRT$XIDB")
-static _PIFV init_console_behavior = _init_console_behavior;
-
-// the linker will deadref these things when doing intra-lib linking. This disables it.
-// (if we compile with CLANG targeting Windows then these will probably get shoved into the section item
-//  above. But that's OK since these don't actually have any meaningful side effects. We don't need to
-//  care where they get run in the init list)
-ForceLinkSymbol(init_abort_behavior   );
-ForceLinkSymbol(init_console_behavior );
 
 #endif

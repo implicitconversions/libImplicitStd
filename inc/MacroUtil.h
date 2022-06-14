@@ -1,6 +1,12 @@
 #pragma once
 
-#define ICY_EVAL(s) #s
+#define ICY_EVAL(s) s
+#define ICY_STRINGIZE(s) #s
+
+
+// Strips parenthesis, such that (12345u) becomes 12345u
+#define STRIP_PARENS(...) _IMPL_STRIP_PARENS __VA_ARGS__
+#define _IMPL_STRIP_PARENS(...) __VA_ARGS__
 
 #define _ICY_CONCAT_(l,r) l##r
 #define ICY_CONCAT(l,r) _ICY_CONCAT_(l,r)

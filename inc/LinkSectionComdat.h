@@ -1,29 +1,5 @@
 #pragma once
 
-#include <atomic>
-
-#include "MacroUtil.h"
-
-struct ForceSymbolToBeLinked
-{
-	ForceSymbolToBeLinked() = delete;
-
-	template<typename T>
-	ForceSymbolToBeLinked(T&& p) {
-		_ForceSymbolToBeLinked((void*)&p);
-	}
-
-	void _ForceSymbolToBeLinked(void const* p);
-};
-
-#define _FORCE_LINK_SYMBOL_LINE(p) ForceSymbolToBeLinked ICY_CONCAT(_deadref_, __LINE__) (p)
-
-#define ForceLinkSymbol(p)             _FORCE_LINK_SYMBOL_LINE(p)
-#define ForceLinkRawLiteral(p)         _FORCE_LINK_SYMBOL_LINE("" p)
-#define ForceLinkLiteral(n, p)         _FORCE_LINK_SYMBOL_LINE("@@_" n ":"  p ":_@@")
-#define ForceLinkDefineAsLiteral(n, d) _FORCE_LINK_SYMBOL_LINE("@@_" n ":" ICY_EVAL(d) ":_@@")
-
-
 // Section Specification.
 // Microsoft has a remarkably obtuse way of defining sections compared to CLANG.
 //  - Microsoft requires a section to be declared and then each line item must be assigned to that section
