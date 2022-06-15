@@ -2,10 +2,9 @@
 
 #include <string>
 
-// helper for C++17's compound (assignment;conditional) style if() statements. Always returns TRUE
-// but overrides an empty string with a default string, hence always returning true. Example:
+// helper for C++17's compound (assignment;conditional) style if() statements. Always returns TRUE. Example:
 //   if (auto path = appGetSetting("--assets-dir"); TakeStringOrDefault(path, "assets")) { }
-#define TakeStringOrDefault(val, def)  (!val.empty() || ((val = def), 1))
+#define TakeStringOrDefault(val, def)  (!val.empty() || ((val = def), true))
 
 
 // this is stuck inside of a namespace to make it aeasier to override behavior without having to define a new API.
