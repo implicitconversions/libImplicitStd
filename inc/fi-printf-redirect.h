@@ -35,8 +35,17 @@ _extern_c int _fi_redirect_fputc    (int ch, FILE* _Stream);
 _extern_c intmax_t _fi_redirect_fwrite(void const* src, size_t, size_t, FILE* fp);
 _extern_c void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);	// expects result of GetStdHandle
 
-#define printf(fmt, ...)		_fi_redirect_printf  (fmt, ## __VA_ARGS__)
-#define fprintf(fp, fmt, ...)	_fi_redirect_fprintf (fp, fmt, ## __VA_ARGS__)
+// microsoft doesn't enable the new preprocessor for C even if you request it. (VS2019 checked)
+
+#if __cplusplus && !_MSVC_TRADITIONAL
+#	define printf(fmt, ...)			_fi_redirect_printf  (    fmt __VA_OPT__(,) ## __VA_ARGS__)
+#	define fprintf(fp, fmt, ...)	_fi_redirect_fprintf (fp, fmt __VA_OPT__(,) ## __VA_ARGS__)
+#else
+#	define printf(fmt, ...)			_fi_redirect_printf  (    fmt, ## __VA_ARGS__)
+#	define fprintf(fp, fmt, ...)	_fi_redirect_fprintf (fp, fmt, ## __VA_ARGS__)
+#endif
+
+
 #define vfprintf(fp, fmt, args)	_fi_redirect_vfprintf(fp, fmt, args)
 #define puts(msg)				_fi_redirect_puts    (msg)
 #define fputs(msg, fp)			_fi_redirect_fputs   (msg, fp)
@@ -49,7 +58,7 @@ _extern_c void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);
 
 // the redirected implementations typically ensure stdout is flushed before writing to stderr, so our error
 // macros here can skip that paperwork.
-#define errprintf(msg, ...) (fprintf(stderr, "" msg, ## __VA_ARGS__))
+#define errprintf(msg, ...) (fprintf(stderr, "" msg __VA_OPT__(,) ## __VA_ARGS__))
 
 #undef _extern_c
 #endif		// REDEFINE_PRINTF
