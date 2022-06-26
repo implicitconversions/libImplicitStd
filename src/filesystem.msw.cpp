@@ -49,6 +49,8 @@ std::string PathFromString(const char* path)
 }
 
 bool exists(const path& fspath) {
+	if (fspath.empty()) return false;
+
 	std::error_code nothrow_please_kthx;
 	if (fspath.is_device()) {
 		// /dev/null and /dev/tty (NUL/CON) always exist, contrary to what std::filesystem thinks... --jstine
