@@ -225,14 +225,19 @@ std::string ReplaceCharSet(std::string srccopy, const char* to_replace, char new
 
 } // namespace StringUtil
 
+
+__nodebug bool u8_nul_or_whitespace(uint8_t ch) {
+	return (ch == 0) || isspace(ch);
+}
+
 // Supports h m s ms  (todo: add support for D M Y for days/months/years?)
 // Expects the endptr as returned from strtod or strtoj.
 // returns a scalar normalized from seconds, such that 's' = 1.0 and 'ms' = 0.0001 and 'h' = 60*60, etc.
 // returns 0.0 if the postfix is null or whitespace.
 // returns -1.0 if the postfix is invalid.
 double CvtTimePostfixToScalar(char const* endptr) {
-	if (!endptr || isspace((uint8_t)*endptr)) {
-		return 0.0;
+	if (!endptr || isspace(*endptr)) {
+		return 1.0;
 	}
 	if (endptr[0] == 's') {
 		if (endptr[1]) {
@@ -251,8 +256,40 @@ double CvtTimePostfixToScalar(char const* endptr) {
 			return 1.0 * 60;		// minute
 		}
 		if (endptr[1] == 's') {
+			if (endptr[2]) {
+				return -1.0;
+			}
 			return 1.0 / 1000;		// millisecond
 		}
 	}
-	return 1.0;
+
+	return -1.0;
+};
+
+// Supports mib/kib/gib and mb/gb/kb
+// Expects the endptr as returned from strtod or strtoj.
+// returns a scalar normalized from seconds, such that 's' = 1.0 and 'ms' = 0.0001 and 'h' = 60*60, etc.
+// returns 0.0 if the postfix is null or whitespace.
+// returns -1.0 if the postfix is invalid.
+double CvtNumericalPostfixToScalar(char const* endptr) {
+	if (!endptr || isspace((uint8_t)*endptr)) {
+		return 0.0;
+	}
+
+	if (strnlen(endptr,4) > 3) {
+		return -1;
+	}
+
+	auto digits = std::string_view{endptr}.substr(0, 3);
+
+	if (digits == "gib") { return 1024*1024*1024; }
+	if (digits == "gb" ) { return 1000*1000*1000; }
+
+	if (digits == "mib") { return 1024*1024; }
+	if (digits == "mb" ) { return 1000*1000; }
+
+	if (digits == "kib") { return 1024; }
+	if (digits == "kb" ) { return 1000; }
+
+	return -1.0;
 };

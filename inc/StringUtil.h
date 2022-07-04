@@ -203,6 +203,9 @@ __nodebug inline uintmax_t strtouj(const StringConversionMagick& src, char** meh
 }
 
 extern double CvtTimePostfixToScalar(char const* endptr);
+extern double CvtNumericalPostfixToScalar(char const* endptr);
+
+extern bool u8_nul_or_whitespace(uint8_t ch);
 
 constexpr uint32_t hash(std::string_view data) noexcept {
 	uint32_t hash = 5381;
