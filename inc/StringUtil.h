@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <cstdarg>
+
 #if !defined(__verify_fmt)
 #   if defined(_MSC_VER)
 #   	define __verify_fmt(fmtpos, vapos)
@@ -45,6 +47,23 @@ inline const char *strcasestr(const char *s, const char *find) {
 	return ((char *)s);
 }
 #endif
+
+// snprintf is usually preferred over other variants:
+//   - snprintf_s has annoying parameter validation and nullifies the buffer instead of truncate.
+//   - sprintf_s  has annoying parameter validation and nullifies the buffer instead of truncate.
+//   - snprintf   truncates the result and ensures a null terminator.
+template<rsize_t _Size> __verify_fmt(2, 3)
+int snprintf(char (&_Buf)[_Size], const char *_Fmt, ...)
+{
+	int _Res;
+	va_list _Ap;
+
+	va_start(_Ap, _Fmt);
+	_Res = vsnprintf(_Buf, _Size, _Fmt, _Ap);
+	va_end(_Ap);
+
+	return _Res;
+}
 
 // Neat!  Returns the case option as a string matching precisely the case label. Useful for logging
 // hardware registers and for converting sparse enumerations into strings (enums where simple char*
@@ -216,3 +235,4 @@ constexpr uint32_t hash(std::string_view data) noexcept {
 
 	return hash;
 }
+

@@ -9,6 +9,7 @@
 #pragma comment (lib, "dbghelp.lib")
 
 #include "msw_app_console_init.h"
+#include "StringUtil.h"
 
 MASTER_DEBUGGABLE
 
@@ -50,8 +51,14 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname)
 
 	MINIDUMP_TYPE mdt       = MiniDumpNormal;
 
-	char dumpfile[240];
+	char dumpfile[MAX_PATH];
 	sprintf_s(dumpfile, "%.*s-crash.dmp", MAX_APP_NAME_LEN, dumpname);
+
+	if (!dumpfile[0]) {
+		// the filename is too long, a dump cannot be written (this should be unreachable since we're just writing
+		// the dump into the CWD)
+		return;
+	}
 
 	// GENERIC_WRITE, FILE_SHARE_READ used to minimize vectors for failure.
 	// I've had multiple issues of this crap call failing for some permission denied reason. --jstine
@@ -102,7 +109,7 @@ static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 	if (s_interactive_user_environ && !::IsDebuggerPresent()) {
 		// surface it to the user if no debugger attached, if debugger it likely already popped up an exception dialog...
 		char fmt_buf[MAX_APP_NAME_LEN + 24];	// avoid heap, it could be corrupt
-		sprintf_s(fmt_buf, "SIGSEGV - %.*s", MAX_APP_NAME_LEN, basename);
+		snprintf(fmt_buf, "SIGSEGV - %.*s", MAX_APP_NAME_LEN, basename);
 		auto result = ::MessageBoxA(nullptr,
 			"ACCESS VIOLATION (SIGSEGV) has occurred and the process has been terminated. "
 			"Check the console output for more details.",
@@ -130,7 +137,7 @@ void SignalHandler(int signal)
 
 		if (s_interactive_user_environ && !::IsDebuggerPresent()) {
 			char fmt_buf[MAX_APP_NAME_LEN + 24];	// avoid heap.
-			sprintf_s(fmt_buf, "abort() - %.*s", MAX_APP_NAME_LEN, basename);
+			snprintf(fmt_buf, "abort() - %.*s", MAX_APP_NAME_LEN, basename);
 
 			auto result = ::MessageBoxA(nullptr,
 				"An error has occured and the application has aborted.\n"
