@@ -268,12 +268,12 @@ double CvtTimePostfixToScalar(char const* endptr) {
 
 // Supports mib/kib/gib and mb/gb/kb
 // Expects the endptr as returned from strtod or strtoj.
-// returns a scalar normalized from seconds, such that 's' = 1.0 and 'ms' = 0.0001 and 'h' = 60*60, etc.
-// returns 0.0 if the postfix is null or whitespace.
+// returns a scalar normalized from bytes
+// returns 1.0 if the postfix is null or whitespace.
 // returns -1.0 if the postfix is invalid.
 double CvtNumericalPostfixToScalar(char const* endptr) {
 	if (!endptr || isspace((uint8_t)*endptr)) {
-		return 0.0;
+		return 1.0;
 	}
 
 	if (strnlen(endptr,4) > 3) {
@@ -282,14 +282,34 @@ double CvtNumericalPostfixToScalar(char const* endptr) {
 
 	auto digits = std::string_view{endptr}.substr(0, 3);
 
+	if (digits == "g")   { return 1024*1024*1024; }
 	if (digits == "gib") { return 1024*1024*1024; }
 	if (digits == "gb" ) { return 1000*1000*1000; }
 
+	if (digits == "m")   { return 1024*1024; }
 	if (digits == "mib") { return 1024*1024; }
 	if (digits == "mb" ) { return 1000*1000; }
 
+	if (digits == "k")   { return 1024; }
 	if (digits == "kib") { return 1024; }
 	if (digits == "kb" ) { return 1000; }
 
 	return -1.0;
 };
+
+std::tuple<intmax_t, bool> StrParseSizeArg(char const* src) {
+
+	if (!src || !src[0]) {
+		return {};
+	}
+
+	char* endptr = nullptr;
+	if (auto newval = strtosj(src, &endptr, 0); endptr && endptr != src) {
+		newval *= CvtNumericalPostfixToScalar(endptr);
+		if (newval > 0) {
+			return { newval, true };
+		}
+	}
+
+	return {};
+}

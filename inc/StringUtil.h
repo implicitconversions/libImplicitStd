@@ -214,11 +214,11 @@ int strcpy_ajek(char (&dest)[size], const char* src)
 // Custom string to integer conversions: sj for intmax_t, uj for uintmax_t
 // Also support implicit conversion from std::string
 __nodebug inline intmax_t strtosj(const StringConversionMagick& src, char** meh, int radix) {
-	return strtoll(src.c_str(), meh, radix);
+	return src.c_str() ? strtoll(src.c_str(), meh, radix) : 0;
 }
 
 __nodebug inline uintmax_t strtouj(const StringConversionMagick& src, char** meh, int radix) {
-	return strtoul(src.c_str(), meh, radix);
+	return src.c_str() ? strtoul(src.c_str(), meh, radix) : 0;
 }
 
 extern double CvtTimePostfixToScalar(char const* endptr);
@@ -236,3 +236,22 @@ constexpr uint32_t hash(std::string_view data) noexcept {
 	return hash;
 }
 
+// shorthand to quickly parse size-type arguments, which are expected to be positive integers.
+// malformed arguments and negative integers return FALSE and leave the dest unmodified.
+template< typename T >
+bool StrParseSizeArg(char const* src, T& dest) {
+	if (!src || !src[0]) {
+		return false;
+	}
+
+	char* endptr = nullptr;
+	if (auto newval = strtosj(src, &endptr, 0); endptr && endptr != src) {
+		newval *= CvtNumericalPostfixToScalar(endptr);
+		if (newval > 0) {
+			dest = (T)newval;
+			return true;
+		}
+	}
+
+	return false;
+}
