@@ -313,3 +313,64 @@ std::tuple<intmax_t, bool> StrParseSizeArg(char const* src) {
 
 	return {};
 }
+
+// performs globbing on pattern strings, including support for escaping (backslash). This means that the following
+// characters can be matched if preceeded by backslash:: * ? [ ]
+//    Example:  "Question\?"
+// 
+// This function is suitable for glob-matching plain text C/C++ identifiers and most filenames.
+//
+bool StringUtil::globMatch(char const* pattern, char const* candidate) {
+	auto* globwalk = pattern;
+	auto* namewalk = candidate;
+
+	if (!globwalk || !namewalk) {
+		return false;			// nullptr does not match nullptr.
+	}
+
+	if (!globwalk[0]) {
+		return !namewalk[0];	// empty string DOES match empty string.
+	}
+
+	if (!namewalk[0]) {
+		return false;
+	}
+
+	while (true) {
+		// TODO: implement bracket matching, which is useful for case sensitivity, eg [Aa]
+		//if (expect_false(*globwalk == '[')) {
+		//	++globwalk;
+		//	char matches[256];
+		//	int mid = 0;
+		//	while(*globwalk && *globwalk != ']' && (mid < bulkof(matches)-1)) {
+		//		matches[mid++] = *globwalk;
+		//	}
+		//}
+
+		if (expect_false(*globwalk == '\\')) {
+			if (strchr("*?[]", globwalk[1])) {
+				++globwalk;
+			}
+			if (*globwalk != *namewalk) {
+				return false;
+			}
+		}
+		elif (expect_false(*globwalk == '*')) {
+			char match_next = globwalk[1];
+				
+			while(namewalk[1] && namewalk[1] != match_next) {
+				++namewalk;
+			}
+		}
+		elif (*globwalk != *namewalk && *globwalk != '?') {
+			return false;
+		}
+
+		++namewalk;
+		++globwalk;
+
+		if (*namewalk == 0 && *globwalk == 0) {
+			return true;
+		}
+	}
+}

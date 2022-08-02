@@ -151,6 +151,7 @@ namespace StringUtil {
 	extern std::string  	toLower		(std::string s);
 	extern std::string  	toUpper		(std::string s);
 	extern std::string  	ReplaceCharSet(std::string srccopy, const char* to_replace, char new_ch);
+	extern bool				globMatch	(char const* pattern, char const* candidate);
 
 	extern bool getBoolean(const StringConversionMagick& left, bool* parse_error=nullptr);
 	inline std::tuple<bool, bool> getBoolean(const StringConversionMagick& left, bool defbool) {
