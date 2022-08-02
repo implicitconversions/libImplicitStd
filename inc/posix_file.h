@@ -50,6 +50,15 @@ using x_off_t = intmax_t;
 #	error Unsupported platform.
 #endif
 
+struct CStatInfo;
+
+// Modification info: abbreviated form of stat that excludes things not relevant to whether a file
+// should be reloaded or not.
+struct CStatModInfo {
+	intmax_t    st_size;
+	time_t      time_modified;
+};
+
 // Lightweight helper class for POSIX stat, just to put things in a little more friendly container.
 struct CStatInfo
 {
@@ -58,7 +67,15 @@ struct CStatInfo
 
 	time_t      time_accessed;
 	time_t      time_modified;
-	time_t      time_created;
+	time_t      time_changed;		// file contents -OR- mode changed.
+
+	operator CStatModInfo() const {
+		return { st_size, time_modified };
+	}
+
+	CStatModInfo getModificationInfo() const {
+		return { st_size, time_modified };
+	}
 
 	bool IsFile     () const;
 	bool IsDir      () const;
@@ -70,7 +87,7 @@ struct CStatInfo
 			(st_size		== r.st_size			) &&
 			(time_accessed	== r.time_accessed		) &&
 			(time_modified	== r.time_modified		) &&
-			(time_created	== r.time_created		)
+			(time_changed	== r.time_changed		)
 		);
 	}
 
@@ -79,6 +96,41 @@ struct CStatInfo
 	}
 };
 
+
+inline bool operator==(const CStatInfo& lval, const CStatModInfo& rval)  {
+	return (
+		(lval.st_size		== rval.st_size			) &&
+		(lval.time_modified	== rval.time_modified	)
+	);
+}
+
+inline bool operator==(const CStatModInfo& lval, const CStatInfo& rval)  {
+	return (
+		(lval.st_size		== rval.st_size			) &&
+		(lval.time_modified	== rval.time_modified	)
+	);
+}
+
+inline bool operator==(const CStatModInfo& lval, const CStatModInfo& rval)  {
+	return (
+		(lval.st_size		== rval.st_size			) &&
+		(lval.time_modified	== rval.time_modified	)
+	);
+}
+
+inline bool operator!=(const CStatModInfo& lval, const CStatInfo& rval) {
+	return !operator==(lval, rval);
+}
+
+
+inline bool operator!=(const CStatInfo& lval, const CStatModInfo& rval) {
+	return !operator==(lval, rval);
+}
+
+
+inline bool operator!=(const CStatModInfo& lval, const CStatModInfo& rval) {
+	return !operator==(lval, rval);
+}
 
 extern int				posix_link		(const char* existing_file, const char* link);
 extern CStatInfo		posix_fstat		(int fd);

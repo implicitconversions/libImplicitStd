@@ -54,6 +54,9 @@ CStatInfo posix_fstat(int fd) {
     };
 }
 
+// caution: win32 does not have a concept of "changed time" and posix does not have a concept of "creation time."
+// As such, per the name, this function returns modified time as the "changed time" and the Win32 "creation time"
+// is not returned.
 CStatInfo posix_stat(const char* path) {
     struct _stat64 sinfo;
     if (_stat64 (path, &sinfo) == -1) {
@@ -67,7 +70,7 @@ CStatInfo posix_stat(const char* path) {
 
         sinfo.st_atime,
         sinfo.st_mtime,
-        sinfo.st_ctime
+        sinfo.st_mtime		// windows ctime is creation time, but posix ctime is "changed time"
     };
 }
 
