@@ -198,6 +198,10 @@ int _fi_redirect_puts(char const* buffer) {
 }
 
 int _fi_redirect_fputs(char const* buffer, FILE* handle) {
+	if (handle == stderr) {
+		fflush(stdout);
+	}
+
 	int result = fputs(buffer, handle);
 
 	if (FILE* pipeto = getOriginalPipeHandle(handle)) {
@@ -214,6 +218,9 @@ int _fi_redirect_fputs(char const* buffer, FILE* handle) {
 }
 
 int _fi_redirect_fputc(int ch, FILE* handle) {
+	// coherency of stdout/stderr on fputc is neigh impossible. So we make no attempt.
+	// (almost nothing uses this anyway)
+
 	int result = fputc(ch, handle);
 
 	if (FILE* pipeto = getOriginalPipeHandle(handle)) {
