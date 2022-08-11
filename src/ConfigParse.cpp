@@ -70,7 +70,7 @@ bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, C
 		return 1;
 	}
 	else {
-		log_error("%s(%d): syntax error parsing: %s", ctx.fullpath.c_str(), ctx.linenum, line.c_str());
+		log_error("%s(%d): expected assignment (=): %s", ctx.fullpath.c_str(), ctx.linenum, line.c_str());
 	}
 	return 0;
 }
