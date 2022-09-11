@@ -154,6 +154,8 @@ namespace StringUtil {
 	extern bool				globMatch	(char const* pattern, char const* candidate);
 
 	extern bool getBoolean(const StringConversionMagick& left, bool* parse_error=nullptr);
+
+	// returns { result, error } -- result will be defbool if error occurred (error=true).
 	inline std::tuple<bool, bool> getBoolean(const StringConversionMagick& left, bool defbool) {
 		bool error;
 		auto result = getBoolean(left, &error);
