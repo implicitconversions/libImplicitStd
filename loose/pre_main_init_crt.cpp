@@ -38,9 +38,9 @@ __section_declare_ro(".CRT$XIDA");
 __section_declare_ro(".CRT$XIDB");
 
 __section_item_ro(".CRT$XIDA")
-static _PIFV init_abort_behavior = _init_abort_behavior;
+_PIFV init_abort_behavior = _init_abort_behavior;
 
 __section_item_ro(".CRT$XIDB")
-static _PIFV init_console_behavior = _init_console_behavior;
+_PIFV init_console_behavior = _init_console_behavior;
 
 #endif
