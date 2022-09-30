@@ -1,5 +1,6 @@
 #pragma once
 
+#include <type_traits>
 
 template <typename T> struct _priv_voidcast { using Type = void; };
 
