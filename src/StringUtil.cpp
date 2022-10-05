@@ -5,6 +5,8 @@
 #include <cstring>
 #include <cstdarg>
 
+#include "StdString.inl"
+
 #if !defined(PLATFORM_MSW)
 #   if defined(_MSC_VER)
 #       define PLATFORM_MSW     1
@@ -140,34 +142,8 @@ __nodebug std::string trim(const std::string& s, const char* delims) {
 	return s.substr(sp, ep - sp + 1);
 }
 
-void AppendFmtV(std::string& result, const StringConversionMagick& fmt, va_list list)
-{
-	if (fmt.empty()) return;
-
-	int destSize = 0;
-	va_list argcopy;
-	va_copy(argcopy, list);
-	destSize = vsnprintf(nullptr, 0, fmt.c_str(), argcopy);
-	va_end(argcopy);
-
-	dbg_check(destSize >= 0, "Invalid string formatting parameters");
-
-	// vsnprintf doesn't count terminating '\0', and resize() doesn't expect it either.
-	// Thus, the following resize() will ensure +1 room for the null that vsprintf_s
-	// will write.
-
-	auto curlen = result.length();
-	result.resize(destSize+curlen);
-	vsprintf_s(const_cast<char*>(result.data() + curlen), destSize+1, fmt.c_str(), list );
-}
-
-__nodebug void AppendFmt(std::string& result, const char* fmt, ...)
-{
-	va_list list;
-	va_start(list, fmt);
-	StringUtil::AppendFmtV(result, fmt, list);
-	va_end(list);
-}
+template void AppendFmtV<std::string>(std::string& result, const StringConversionMagick& fmt, va_list list);
+template void AppendFmt <std::string>(std::string& result, const char* fmt, ...);
 
 
 __nodebug std::string FormatV(const StringConversionMagick& fmt, va_list list)
