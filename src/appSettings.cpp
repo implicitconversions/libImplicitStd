@@ -76,6 +76,14 @@ bool appGetSettingBool(const std::string& name, bool nonexist_result) {
 	return exists ? value : nonexist_result;
 }
 
+uint32_t appGetSettingUint32(const std::string& name, uint32_t nonexist_result) {
+	std::string val;
+	if (appGetSetting(name, val)) {
+		return cppStrToU32(val.c_str());
+	}
+	return nonexist_result;
+}
+
 bool appSettingDeprecationCheck(std::string const& name, std::string const& deprecated_alias) {
 	if (auto [depr_value, depr_exists] = appGetSettingTuple(deprecated_alias); depr_exists) {
 		if (!appHasSetting(name)) {

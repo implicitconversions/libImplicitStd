@@ -19,6 +19,7 @@ namespace icyAppSettingsIfc
 	extern bool			appGetSetting		(const std::string& name, std::string& value);
 	extern bool			appHasSetting		(const std::string& name);
 	extern bool			appGetSettingBool	(const std::string& name, bool nonexist_result=0);
+	extern uint32_t		appGetSettingUint32	(const std::string& name, uint32_t nonexist_result = 0);
 
 	extern std::tuple<std::string, bool> appGetSettingTuple(const std::string& name);
 	extern bool appSettingDeprecationCheck(std::string const& name, std::string const& deprecated_alias);
