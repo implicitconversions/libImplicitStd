@@ -64,7 +64,7 @@ std::tuple<bool, bool> _getSettingBool(std::map<std::string, std::string> const&
 		bool parse_error;
 		result = StringUtil::getBoolean(rvalue, &parse_error);
 		if (parse_error) {
-			fprintf(stderr, "Config error: expected boolean r-value parsing %s=%s", name.c_str(), rvalue.c_str());
+			fprintf(stderr, "Config error: expected boolean r-value parsing %s=%s\n", name.c_str(), rvalue.c_str());
 			return {};
 		}
 	}
@@ -80,6 +80,27 @@ uint32_t appGetSettingUint32(const std::string& name, uint32_t nonexist_result) 
 	std::string val;
 	if (appGetSetting(name, val)) {
 		return cppStrToU32(val.c_str());
+	}
+	return nonexist_result;
+}
+
+ptrdiff_t appGetSettingMemorySize(const std::string& name, ptrdiff_t nonexist_result) {
+	std::string val;
+	if (appGetSetting(name, val)) {
+		char *endptr = nullptr;
+		const char* valstr = val.c_str();
+		auto value = strtod(valstr, &endptr);
+		if (value <= 0 || endptr == valstr) {
+			fprintf(stderr, "Config error: expected size argument when parsing %s=%s [ex: 30.5mib, 3000kib, 1280000 (bytes)]\n", name.c_str(), val.c_str());
+			return nonexist_result;
+		}
+		elif (auto scalar = CvtNumericalPostfixToScalar(endptr); scalar >= 0) {
+			return value * scalar;
+		}
+		else {
+			fprintf(stderr, "Expected size postfix when parsing %s=%s [ex: kb,kib,mb,mib]\n", name.c_str(), val.c_str());
+			return nonexist_result;
+		}
 	}
 	return nonexist_result;
 }
