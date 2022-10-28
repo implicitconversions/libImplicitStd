@@ -219,3 +219,5 @@ bool StrParseSizeArg(char const* src, T& dest) {
 
 	return false;
 }
+
+std::string SanitizeUtf8(const std::string& str);

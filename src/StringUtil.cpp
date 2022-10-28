@@ -350,3 +350,135 @@ bool StringUtil::globMatch(char const* pattern, char const* candidate) {
 		}
 	}
 }
+
+namespace {
+
+	constexpr uint8_t kUtf8Safe2ByteSequence[2] = { 0xC2, 0xBF };
+	constexpr uint8_t kUtf8Safe3ByteSequence[3] = { 0xE0, 0xA0, 0x86 };
+	constexpr uint8_t kUtf8Safe4ByteSequence[4] = { 0xF0, 0x90, 0x8C, 0xB8 };
+
+	std::string Ascii8ToUtf8(char ch) {
+		std::string result;
+		int iChar = ch;
+		if (iChar < 0) {
+			iChar += 256;
+		}
+		if (iChar < 128) {
+			result.append(&ch, 1);
+		}
+		else {
+			const char utf8Char[2] = {
+				char(0b11000000 | (iChar >> 6)), // The 2 upper bits mark it as a 2 byte character, insert the upper 2 bits of the ascii8 character
+				char(0b10000000 | int(iChar & 0b00111111)), // The bottom 6 bits of the ascii8 character
+			};
+
+			result.append(utf8Char, sizeof(utf8Char));
+		}
+
+		return result;
+	}
+
+	bool IsUtf8CharacterStartByte(uint8_t ch, int& sequenceLength) {
+		// 0xxxxxxx - 1-byte sequence - traditional ASCII
+		if ((ch & 0b1000'0000) == 0b0000'0000) {
+			sequenceLength = 1;
+		}
+		// 110xxxxx - 2-byte sequence
+		else if ((ch & 0b1110'0000) == 0b1100'0000) {
+			sequenceLength = 2;
+		}
+		// 1110xxxx - 3-byte sequence
+		else if ((ch & 0b1111'0000) == 0b1110'0000) {
+			sequenceLength = 3;
+		}
+		// 11110xxx - 4-byte sequence
+		else if ((ch & 0b1111'1000) == 0b1111'0000) {
+			sequenceLength = 4;
+		}
+		// Invalid
+		else {
+			sequenceLength = 1;
+			return false;
+		}
+
+		return true;
+	}
+
+	bool IsValidUtf8CharacterSequence(const uint8_t* ch, int& supposedSequenceLength) {
+		if (!IsUtf8CharacterStartByte(*ch, supposedSequenceLength)) {
+			return false;
+		}
+
+		// Skip the start byte
+		ch++;
+		int sequenceRemaining = supposedSequenceLength - 1;
+
+		while (sequenceRemaining > 0 && *ch != '\0') {
+			// Make sure each byte is of the form 10xxxxxx
+			if ((*ch & 0b1100'0000) != 0b1000'0000) {
+				return false;
+			}
+			ch++;
+			sequenceRemaining--;
+		}
+
+		// End of string reached but byte sequence not complete
+		if (sequenceRemaining > 0) {
+			return false;
+		}
+
+		return true;
+	}
+}
+
+std::string SanitizeUtf8(const std::string& str) {
+
+	std::string result;
+
+	const uint8_t* cur = reinterpret_cast<const uint8_t*>(str.data());
+
+	while (*cur != '\0') {
+
+		int sequenceLength = 0;
+
+		// Valid sequence, copy into the result
+		if (IsValidUtf8CharacterSequence(cur, sequenceLength)) {
+			result.append(reinterpret_cast<const char*>(cur), sequenceLength);
+		}
+		// Invalid single character sequence - assume we got ASCII8
+		else if (sequenceLength == 1) {
+			result.append(Ascii8ToUtf8(*cur));
+		}
+		// Insert a safe character
+		else {
+			switch (sequenceLength) {
+				case 2: {
+					result.append(reinterpret_cast<const char*>(kUtf8Safe2ByteSequence), bulkof(kUtf8Safe2ByteSequence));
+					break;
+				}
+				case 3: {
+					result.append(reinterpret_cast<const char*>(kUtf8Safe3ByteSequence), bulkof(kUtf8Safe3ByteSequence));
+					break;
+				}
+				case 4: {
+					result.append(reinterpret_cast<const char*>(kUtf8Safe4ByteSequence), bulkof(kUtf8Safe4ByteSequence));
+					break;
+				}
+				default: {
+					// This should never happen
+					break;
+				}
+			}
+		}
+
+		// Move to the next character start
+		for (int i = 0; i < sequenceLength; ++i) {
+			if (*cur == '\0') {
+				break;
+			}
+			cur++;
+		}
+	}
+
+	return result;
+}
