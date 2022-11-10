@@ -9,7 +9,7 @@
   <ItemGroup>
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/filesystem.msw.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/fs.cpp" />
-    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/logger_local_buffer.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/StringBuilder.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/msw-printf-stdout.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/msw_app_console_init.cpp">
       <WholeProgramOptimization>false</WholeProgramOptimization>
@@ -18,6 +18,7 @@
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/StringUtil.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/appSettings.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/ConfigParse.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/standardfilesystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/msw_app_console_init.h" />
@@ -32,9 +33,15 @@
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/fi-verify-printf-msvc.h" />
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/fs.h" />
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/jfmt.h" />
-    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/logger_local_buffer.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/StringBuilder.h" />
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/appSettings.h" />
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/appSettingsMap.h" />
     <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/LinkSectionComdat.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/filesysteminterface.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/standardfilesystem.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/MacroUtil.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/ptr_cast.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/StdStringArg.h" />
+    <ClInclude Include="$(_RELPATH_TO_ICYSTDLIB)/inc/void_cast.h" />
   </ItemGroup>
 </Project>
