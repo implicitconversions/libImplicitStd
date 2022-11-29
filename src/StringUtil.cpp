@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <cstdarg>
+#include <charconv>
 
 #include "StdString.inl"
 
@@ -40,33 +41,6 @@ char *_stristr(const char *haystack, const char *needle)
 }
 #endif
 
-// Basically an extension to strtoul() which supports C++14 formatting extension for binary.
-uint32_t cppStrToU32(const StringConversionMagick& srcmagick, char** endptr) {
-	const char* src = srcmagick.c_str();
-
-	if (strncmp(src, "0b", 2) == 0) {
-		// binary notation support.
-		src += 2;
-		const char* startpos = src;
-		uint32_t result = 0;
-		while (src[0]) {
-			if   (src[0] == '1' )   { result = (result << 1) | 1; }
-			elif (src[0] == '0' )   { result = (result << 1) | 0; }
-			elif (src[0] == '\'')   { /* ignored */ }
-			else {
-				// parse error, essentially.
-				break;
-			}
-			++src;
-		}
-		if (endptr) {
-			*endptr = (char*)((src == startpos) ? srcmagick.c_str() : src);
-		}
-		return result;
-	}
-
-	return strtoul(src, endptr, 0);
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Why strcpy_ajek?

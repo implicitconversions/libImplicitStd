@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <string_view>
+#include <cassert>
 
 // StringConversionMagick - struct meant for use as an aide in function parameter passing only.
 //
@@ -12,8 +14,7 @@
 //   makes it really hard for libraries to inter-operate with other libs that expect plain old
 //   std::string.  So now I'm going with this, let's see what happens!  --jstine
 //
-struct StringConversionMagick
-{
+struct StringConversionMagick {
 	const char*			m_cstr   = nullptr;
 	const std::string*	m_stdstr = nullptr;
 	int                 m_length = -1;
@@ -48,3 +49,122 @@ struct StringConversionMagick
 		return (m_length < 0) ? strlen(m_cstr) : m_length;
 	}
 };
+
+// StringViewTempArg - struct meant for use as an aide in function parameter passing only.
+// Allows passing string or string_view into a function.
+struct StringViewTempArg {
+private:
+	StringViewTempArg(const StringViewTempArg&) = delete;
+	StringViewTempArg(StringViewTempArg&&)      = delete;
+	StringViewTempArg& operator=(const StringViewTempArg&) = delete;
+	StringViewTempArg& operator=(StringViewTempArg&&)      = delete;
+
+public:
+	std::string_view	m_stdview;
+
+	StringViewTempArg(std::string const&      str) : m_stdview(str) {}
+	StringViewTempArg(std::string_view const& str) : m_stdview(str) {}
+
+	std::string_view string_view() const {
+		return m_stdview;
+	}
+};
+
+// StringViewSpecificArg - struct meant for use as an aide in function parameter passing only.
+// Allows passing char*, string, or string_view into a function. The function is then to use the 
+// read_next/peek_next methods to read out the string. Suitable for use by functions that would
+// normally be well-suited to ASCII-Z strings, eg. where the length of the string does not need
+// to be known ahead of time.
+// 
+// Templating is employed to maximize codegen. Use StringViewGenericArg for un-optimized general solution.
+template<bool allowCString=true, bool allowStringView=true>
+struct StringViewSpecificArg {
+	char const*				m_cstr   = nullptr;
+	std::string_view		m_stdstr;
+	int                     m_readpos = 0;
+
+	StringViewSpecificArg(std::string const& str) : m_stdstr(str) {
+	}
+
+	StringViewSpecificArg(std::string_view const& str) : m_stdstr(str) {
+	}
+
+	StringViewSpecificArg(char const* const (&str)) {
+		m_cstr   = str;
+	}
+
+	template<int size>
+	StringViewSpecificArg(const char (&str)[size]) : m_stdstr(str, size) {
+	}
+
+	__always_inline
+	bool isView() const {
+		if constexpr (allowCString) {
+			return !m_cstr;
+		}
+		else {
+			return true;
+		}
+	}
+
+	__always_inline
+	int read_next() {
+		int result = peek_next();
+		m_readpos += (result != 0);
+		return result;
+	}
+
+	__always_inline
+	int peek_next() const {
+		if constexpr (allowCString) {
+			if (!isView()) {
+				auto result = m_cstr[m_readpos];
+				return result;
+			}
+		}
+
+		if constexpr(allowStringView) {
+			if (m_readpos < m_stdstr.length()) {
+				return m_stdstr[m_readpos];
+			}
+		}
+		return 0;
+	}
+
+	__always_inline
+	int readpos() const {
+		return m_readpos;
+	}
+
+	std::string_view const& string_view() const {
+		assert(!m_cstr);
+		return m_stdstr;
+	}
+
+	__always_inline
+	char const* data() const {
+		return isView() ? m_stdstr.data() : m_cstr;
+	}
+
+	__always_inline
+	bool empty() const {
+		if (isView()) { 
+			return m_stdstr.empty();
+		}
+		else {
+			return m_cstr && !m_cstr[0];
+		}
+
+	}
+
+	int fixed_length() const {
+		if (m_cstr) {
+			return INT_MAX;
+		}
+
+		return m_stdstr.length();
+	}
+};
+
+
+using StringViewGenericArg = StringViewSpecificArg<>;

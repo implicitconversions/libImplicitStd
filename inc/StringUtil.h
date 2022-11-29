@@ -5,6 +5,7 @@
 
 #include <cstdarg>
 
+#include "jfmt.h"
 #include "StdStringArg.h"
 #include "StringBuilder.h"
 
@@ -55,7 +56,7 @@ inline const char *strcasestr(const char *s, const char *find) {
 //   - snprintf_s has annoying parameter validation and nullifies the buffer instead of truncate.
 //   - sprintf_s  has annoying parameter validation and nullifies the buffer instead of truncate.
 //   - snprintf   truncates the result and ensures a null terminator.
-template<rsize_t _Size> __verify_fmt(2, 3)
+template<intmax_t _Size> __verify_fmt(2, 3)
 int snprintf(char (&_Buf)[_Size], const char *_Fmt, ...)
 {
 	int _Res;
@@ -66,6 +67,11 @@ int snprintf(char (&_Buf)[_Size], const char *_Fmt, ...)
 	va_end(_Ap);
 
 	return _Res;
+}
+
+template<intmax_t _Size> 
+char const* fgets(char (&_Buf)[_Size], FILE* fp) {
+	return fgets(_Buf, _Size, fp);
 }
 
 // Neat!  Returns the case option as a string matching precisely the case label. Useful for logging
@@ -140,8 +146,6 @@ namespace StringUtil {
 	}
 }
 
-extern uint32_t cppStrToU32(const StringConversionMagick& src, char** endptr = nullptr);
-
 extern int strcpy_ajek(char* dest, int destlen, const char* src);
 template<int size> __nodebug
 int strcpy_ajek(char (&dest)[size], const char* src)
@@ -175,16 +179,6 @@ inline bool strIsEmpty(StringConversionMagick const& view) {
 #	define cFmtStr(...)		            (StringBuilder<256>().format(__VA_ARGS__).c_str())
 #	define AppendFmtStr(dest, fmt, ...)	(StringUtil::AppendFmt(dest, fmt, ## __VA_ARGS__))
 #endif
-
-// Custom string to integer conversions: sj for intmax_t, uj for uintmax_t
-// Also support implicit conversion from std::string
-__nodebug inline intmax_t strtosj(const StringConversionMagick& src, char** meh, int radix) {
-	return src.c_str() ? strtoll(src.c_str(), meh, radix) : 0;
-}
-
-__nodebug inline uintmax_t strtouj(const StringConversionMagick& src, char** meh, int radix) {
-	return src.c_str() ? strtoul(src.c_str(), meh, radix) : 0;
-}
 
 extern double CvtTimePostfixToScalar(char const* endptr);
 extern double CvtNumericalPostfixToScalar(char const* endptr);

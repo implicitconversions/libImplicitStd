@@ -77,9 +77,12 @@ bool appGetSettingBool(const std::string& name, bool nonexist_result) {
 }
 
 uint32_t appGetSettingUint32(const std::string& name, uint32_t nonexist_result) {
-	std::string val;
-	if (appGetSetting(name, val)) {
-		return cppStrToU32(val.c_str());
+	if (auto val = appGetSetting(name); !val.empty()) {
+		auto result = strtouj(val.c_str());
+		if (result != (uint32_t)result) {
+			errno = ERANGE;
+			return UINT32_MAX;
+		}
 	}
 	return nonexist_result;
 }
