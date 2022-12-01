@@ -162,12 +162,16 @@ uintmax_t strtouj(char const* src, char** endptr, int radix) {
 	return _generic_strtoj<uintmax_t, true, false>(src, endptr, radix);
 }
 
-intmax_t strtosj(StringViewTempArg src, char** endptr, int radix) {
-	return _generic_strtoj<intmax_t, false, true>(src.string_view(), endptr, radix);
+intmax_t strtosj(std::string_view src, char** endptr, int radix) {
+	return _generic_strtoj<intmax_t, false, true>(src, endptr, radix);
 }
 
-uintmax_t strtouj(StringViewTempArg src, char** endptr, int radix) {
-	return _generic_strtoj<uintmax_t, false, true>(src.string_view(), endptr, radix);
+uintmax_t strtouj(std::string_view src, char** endptr, int radix) {
+	return _generic_strtoj<uintmax_t, false, true>(src, endptr, radix);
 }
 
+intmax_t  strtosj(char const* src,       int radix) { return strtosj(src, nullptr, radix); }
+intmax_t  strtosj(std::string_view src,  int radix) { return strtosj(src, nullptr, radix); }
+uintmax_t strtouj(char const* src,       int radix) { return strtouj(src, nullptr, radix); }
+uintmax_t strtouj(std::string_view src,  int radix) { return strtouj(src, nullptr, radix); }
 

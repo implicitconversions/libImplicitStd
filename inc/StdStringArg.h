@@ -50,26 +50,6 @@ struct StringConversionMagick {
 	}
 };
 
-// StringViewTempArg - struct meant for use as an aide in function parameter passing only.
-// Allows passing string or string_view into a function.
-struct StringViewTempArg {
-private:
-	StringViewTempArg(const StringViewTempArg&) = delete;
-	StringViewTempArg(StringViewTempArg&&)      = delete;
-	StringViewTempArg& operator=(const StringViewTempArg&) = delete;
-	StringViewTempArg& operator=(StringViewTempArg&&)      = delete;
-
-public:
-	std::string_view	m_stdview;
-
-	StringViewTempArg(std::string const&      str) : m_stdview(str) {}
-	StringViewTempArg(std::string_view const& str) : m_stdview(str) {}
-
-	std::string_view string_view() const {
-		return m_stdview;
-	}
-};
-
 // StringViewSpecificArg - struct meant for use as an aide in function parameter passing only.
 // Allows passing char*, string, or string_view into a function. The function is then to use the 
 // read_next/peek_next methods to read out the string. Suitable for use by functions that would
