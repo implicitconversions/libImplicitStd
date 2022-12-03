@@ -33,6 +33,14 @@ struct StringConversionMagick {
 		m_length = size-1;
 	}
 
+	bool isStdString() const {
+		return m_stdstr;
+	}
+
+	std::string const* string_ptr() const {
+		return m_stdstr;
+	}
+
 	const char* c_str() const {
 		return m_stdstr ? m_stdstr->c_str() : m_cstr;
 	}
@@ -49,6 +57,9 @@ struct StringConversionMagick {
 		return (m_length < 0) ? strlen(m_cstr) : m_length;
 	}
 };
+
+
+using StdStringTempArg = StringConversionMagick const&;
 
 // StringViewSpecificArg - struct meant for use as an aide in function parameter passing only.
 // Allows passing char*, string, or string_view into a function. The function is then to use the 

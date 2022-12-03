@@ -19,7 +19,7 @@ void appRemoveSetting(const std::string& lvalue) {
 	m_map.erase(lvalue);
 }
 
-std::string appGetSetting(const std::string& name) {
+std::string appGetSetting(StdStringTempArg name) {
 	auto it = m_map.find(name);
 	if (it == m_map.end()) return {};
 	return it->second;
@@ -31,10 +31,8 @@ std::tuple<std::string, bool> appGetSettingTuple(const std::string& name) {
 	return { it->second, true };
 }
 
-std::string appGetSettingLwr(const std::string& name) {
-	auto it = m_map.find(name);
-	if (it == m_map.end()) return {};
-	return StringUtil::toLower(it->second);
+std::string appGetSettingLwr(StdStringTempArg name) {
+	return StringUtil::toLower(appGetSetting(name));
 }
 
 bool appGetSetting(const std::string& name, std::string& value) {
@@ -51,7 +49,7 @@ bool appHasSetting(const std::string& name) {
 }
 
 // returns 'exists' and 'value'
-std::tuple<bool, bool> _getSettingBool(std::map<std::string, std::string> const& map, const std::string& name) {
+std::optional<bool> _getSettingBool(std::map<std::string, std::string> const& map, const std::string& name) {
 	auto it = map.find(name);
 	if (it == map.end()) return {};
 
@@ -64,48 +62,42 @@ std::tuple<bool, bool> _getSettingBool(std::map<std::string, std::string> const&
 		bool parse_error;
 		result = StringUtil::getBoolean(rvalue, &parse_error);
 		if (parse_error) {
+			errno = EINVAL;
 			fprintf(stderr, "Config error: expected boolean r-value parsing %s=%s\n", name.c_str(), rvalue.c_str());
 			return {};
 		}
 	}
-	return {true, result};
+	return result;
 }
 
 bool appGetSettingBool(const std::string& name, bool nonexist_result) {
-	auto [exists, value] = _getSettingBool(g_map, name);
-	return exists ? value : nonexist_result;
+	auto opt = _getSettingBool(g_map, name);
+	return opt.value_or(nonexist_result);
 }
 
-uint32_t appGetSettingUint32(const std::string& name, uint32_t nonexist_result) {
-	if (auto val = appGetSetting(name); !val.empty()) {
-		auto result = strtouj(val.c_str());
-		if (result != (uint32_t)result) {
-			errno = ERANGE;
-			return UINT32_MAX;
-		}
-	}
-	return nonexist_result;
-}
+StdOptionString<ptrdiff_t> appGetSettingMemorySize(const std::string& name, ptrdiff_t nonexist_result) {
+	auto rval = appGetSetting(name);
+	auto result = std::pair { nonexist_result, rval };
 
-ptrdiff_t appGetSettingMemorySize(const std::string& name, ptrdiff_t nonexist_result) {
-	std::string val;
-	if (appGetSetting(name, val)) {
-		char *endptr = nullptr;
-		const char* valstr = val.c_str();
-		auto value = strtod(valstr, &endptr);
-		if (value <= 0 || endptr == valstr) {
-			fprintf(stderr, "Config error: expected size argument when parsing %s=%s [ex: 30.5mib, 3000kib, 1280000 (bytes)]\n", name.c_str(), val.c_str());
-			return nonexist_result;
-		}
-		elif (auto scalar = CvtNumericalPostfixToScalar(endptr); scalar >= 0) {
-			return value * scalar;
-		}
-		else {
-			fprintf(stderr, "Expected size postfix when parsing %s=%s [ex: kb,kib,mb,mib]\n", name.c_str(), val.c_str());
-			return nonexist_result;
-		}
+	if (rval.empty()) {
+		return result;
 	}
-	return nonexist_result;
+
+	char *endptr = nullptr;
+	const char* valstr = rval.c_str();
+	auto value = strtod(valstr, &endptr);
+	if (value <= 0 || endptr == valstr) {
+		fprintf(stderr, "Config error: expected size argument when parsing %s=%s [ex: 30.5mib, 3000kib, 1280000 (bytes)]\n", name.c_str(), rval.c_str());
+		errno = EINVAL;
+	}
+	elif (auto scalar = CvtNumericalPostfixToScalar(endptr); scalar >= 0) {
+		result.first = value * scalar, rval;
+	}
+	else {
+		fprintf(stderr, "Expected size postfix when parsing %s=%s [ex: kb,kib,mb,mib]\n", name.c_str(), rval.c_str());
+		errno = EINVAL;
+	}
+	return result;
 }
 
 bool appSettingDeprecationCheck(std::string const& name, std::string const& deprecated_alias) {
@@ -119,4 +111,44 @@ bool appSettingDeprecationCheck(std::string const& name, std::string const& depr
 	return false;
 }
 
+std::optional<bool> _template_impl::ConvertToBool(std::string const& rval) {
+	return _getSettingBool(g_map, rval);
+}
+
+std::optional<double> _template_impl::ConvertFromString_f64(std::string const& rval) {
+	char *endptr = nullptr;
+	const char* valstr = rval.c_str();
+	auto value = strtod(valstr, &endptr);
+	if (endptr == valstr) {
+		errno = EINVAL;
+		return {};
+	}
+	return value;
+}
+
+std::optional<float> _template_impl::ConvertFromString_f32(std::string const& rval) {
+	char *endptr = nullptr;
+	const char* valstr = rval.c_str();
+	auto value = strtof(valstr, &endptr);
+	if (endptr == valstr) {
+		errno = EINVAL;
+		return {};
+	}
+	return value;
+}
+
+template<> std::optional<bool    > ConvertFromString(std::string const& rval) { return _template_impl::ConvertToBool(rval); }
+template<> std::optional<uint32_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint32_t>(rval); }
+template<> std::optional< int32_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int32_t>(rval); }
+template<> std::optional<uint64_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint64_t>(rval); }
+template<> std::optional< int64_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int64_t>(rval); }
+template<> std::optional<uint16_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint16_t>(rval); }
+template<> std::optional< int16_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int16_t>(rval); }
+template<> std::optional<uint8_t > ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint8_t >(rval); }
+template<> std::optional< int8_t > ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int8_t >(rval); }
+template<> std::optional<float>    ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_f32(rval); }
+template<> std::optional<double>   ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_f64(rval); }
 } // namespace
+
+
+

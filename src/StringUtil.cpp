@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdarg>
 #include <charconv>
+#include <optional>
 
 #include "StdString.inl"
 
