@@ -8,6 +8,8 @@ namespace icyAppSettingsIfc
 {
 std::map<std::string, std::string> g_map;
 
+static std::string tls_stdstring(128, 0);
+
 // lazy way to make this code look like a class member, and just in case we want to class it later.
 static auto& m_map = g_map;
 
@@ -20,7 +22,12 @@ void appRemoveSetting(const std::string& lvalue) {
 }
 
 std::string appGetSetting(StdStringTempArg name) {
-	auto it = m_map.find(name);
+	auto* stringptr = name.string_ptr();
+	if (!stringptr) {
+		tls_stdstring = name.c_str();
+		stringptr = &tls_stdstring;
+	}
+	auto it = m_map.find(stringptr[0]);
 	if (it == m_map.end()) return {};
 	return it->second;
 }
