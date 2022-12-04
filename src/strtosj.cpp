@@ -84,8 +84,7 @@ ResultType _generic_strtoj(StringViewSpecificArg<allowCString, allowStringView> 
 	ResultType oacc = 0;
 	int any = 0;
 	bool erange = false;
-	for (;;) {
-		int c = srcmagick.read_next();
+	for (;;c = srcmagick.read_next()) {
 		if (!c) {
 			break;
 		}
