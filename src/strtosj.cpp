@@ -33,7 +33,7 @@ std::make_unsigned_t<T> to_unsigned(T src) {
  */
 
 template<typename ResultType, bool allowCString=true, bool allowStringView=true>
-ResultType _generic_strtoj(StringViewSpecificArg<allowCString, allowStringView> srcmagick, char** endptr, int base=0)
+ResultType _generic_strtoj(StringViewSpecificArg<allowCString, allowStringView> srcmagick, int* charsConsumed, int base=0)
 {
 	constexpr bool isSigned = std::is_signed_v<ResultType>;
 	int neg = 1;
@@ -147,26 +147,36 @@ ResultType _generic_strtoj(StringViewSpecificArg<allowCString, allowStringView> 
 		errno = ERANGE;
 	}
 
-	if (endptr) {
-		*endptr = const_cast<char*>(any ? (srcmagick.data() + (srcmagick.readpos()-1)) : nullptr);
+	if (charsConsumed) {
+		*charsConsumed = any ? (srcmagick.readpos()-1) : 0;
 	}
-	return (acc);
+	return acc;
 }
 
 intmax_t strtosj(char const* src, char** endptr, int radix) {
-	return _generic_strtoj<intmax_t, true, false>(src, endptr, radix);
+	int consumed = 0;
+	auto result = _generic_strtoj<intmax_t, true, false>(src, &consumed, radix);
+	if (endptr) {
+		*endptr = const_cast<char*>(src) + consumed;
+	}
+	return result;
 }
 
 uintmax_t strtouj(char const* src, char** endptr, int radix) {
-	return _generic_strtoj<uintmax_t, true, false>(src, endptr, radix);
+	int consumed = 0;
+	auto result = _generic_strtoj<uintmax_t, true, false>(src, &consumed, radix);
+	if (endptr) {
+		*endptr = const_cast<char*>(src) + consumed;
+	}
+	return result;
 }
 
-intmax_t strtosj(std::string_view src, char** endptr, int radix) {
-	return _generic_strtoj<intmax_t, false, true>(src, endptr, radix);
+intmax_t strtosj(std::string_view src, int* charsConsumed, int radix) {
+	return _generic_strtoj<intmax_t, false, true>(src, charsConsumed, radix);
 }
 
-uintmax_t strtouj(std::string_view src, char** endptr, int radix) {
-	return _generic_strtoj<uintmax_t, false, true>(src, endptr, radix);
+uintmax_t strtouj(std::string_view src, int* charsConsumed, int radix) {
+	return _generic_strtoj<uintmax_t, false, true>(src, charsConsumed, radix);
 }
 
 intmax_t  strtosj(char const* src,       int radix) { return strtosj(src, nullptr, radix); }

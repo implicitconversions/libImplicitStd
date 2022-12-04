@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string_view>
+
 // JFMT - printf formatting helper to solve variable int size problem.
 //
 // This promotes incoming scalar to either signed or unsigned intmax_t, in a similar way that C internally
@@ -43,13 +45,12 @@ struct StringViewTempArg;
 //
 // Sets errno = ERANGE on truncated 64-bit input value and returns UINTMAX_MAX / INTMAX_MAX / INTMAX_MIN.
 
-#include <string_view>
-extern intmax_t  strtosj(char const* src,       char** endptr=nullptr, int radix=0);
-extern intmax_t  strtosj(std::string_view src, char** endptr=nullptr, int radix=0);
-extern uintmax_t strtouj(char const* src,       char** endptr=nullptr, int radix=0);
-extern uintmax_t strtouj(std::string_view src, char** endptr=nullptr, int radix=0);
+extern intmax_t  strtosj(char const* src,       char** endptr=nullptr,      int radix=0);
+extern intmax_t  strtosj(std::string_view src,  int* charsConsumed=nullptr, int radix=0);
+extern uintmax_t strtouj(char const* src,       char** endptr=nullptr,      int radix=0);
+extern uintmax_t strtouj(std::string_view src,  int* charsConsumed=nullptr, int radix=0);
 
 extern intmax_t  strtosj(char const* src,       int radix);
-extern intmax_t  strtosj(std::string_view src, int radix);
+extern intmax_t  strtosj(std::string_view src,  int radix);
 extern uintmax_t strtouj(char const* src,       int radix);
-extern uintmax_t strtouj(std::string_view src, int radix);
+extern uintmax_t strtouj(std::string_view src,  int radix);
