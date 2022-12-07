@@ -141,7 +141,3 @@ using StringBufTrunc = StringBuilderTrunc<bufsize>;
 using logger_local_buffer = StringBuilder<2048>;
 
 void WriteToStandardPipeWithFlush(FILE* pipe, char const* msg);		// maybe find a better home for this.
-
-#if !USE_SCE_LTO
-#	include "StringBuilder.hxx"
-#endif
