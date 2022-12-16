@@ -62,7 +62,7 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname)
 
 	// GENERIC_WRITE, FILE_SHARE_READ used to minimize vectors for failure.
 	// I've had multiple issues of this crap call failing for some permission denied reason. --jstine
-	if (HANDLE hFile = CreateFileA(dumpfile, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr)) {
+	if (HANDLE hFile = CreateFileA(dumpfile, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr); hFile != INVALID_HANDLE_VALUE) {
 		BOOL Result = MiniDumpWriteDump(
 			::GetCurrentProcess(),
 			::GetCurrentProcessId(),
