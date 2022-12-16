@@ -51,6 +51,17 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname)
 
 	MINIDUMP_TYPE mdt       = MiniDumpNormal;
 
+	char dumpname_bare[MAX_PATH];
+	size_t length = strlen(dumpname);
+	if (length >= 4 && length < MAX_PATH && !strcmp(dumpname + length - 4, ".exe"))
+	{
+		if (strcpy_s(dumpname_bare, dumpname))
+			return;
+
+		dumpname_bare[length - 4] = 0;
+		dumpname = dumpname_bare;
+	}
+
 	char dumpfile[MAX_PATH];
 	sprintf_s(dumpfile, "%.*s-crash.dmp", MAX_APP_NAME_LEN, dumpname);
 
