@@ -83,7 +83,7 @@ __nodebug int strcpy_ajek(char* dest, int destlen, const char* src)
 
 namespace StringUtil {
 
-__nodebug std::string toLower(std::string src)
+std::string toLower(std::string src)
 {
 	// UTF8 friendly variety!  Can't use std::transform because tolower() needs to operate on
 	// unsigned character codes.
@@ -93,7 +93,7 @@ __nodebug std::string toLower(std::string src)
 	return src;
 }
 
-__nodebug std::string toUpper(std::string src)
+std::string toUpper(std::string src)
 {
 	// UTF8 friendly variety!  Can't use std::transform because tolower() needs to operate on
 	// unsigned character codes.
@@ -103,7 +103,7 @@ __nodebug std::string toUpper(std::string src)
 	return src;
 }
 
-__nodebug std::string trim(const std::string& s, const char* delims) {
+std::string trim(const std::string& s, const char* delims) {
 	int sp = 0;
 	int ep = int(s.length()) - 1;
 	for (; ep >= 0; --ep)
@@ -121,14 +121,14 @@ template void AppendFmtV<std::string>(std::string& result, const StringConversio
 template void AppendFmt <std::string>(std::string& result, const char* fmt, ...);
 
 
-__nodebug std::string FormatV(const StringConversionMagick& fmt, va_list list)
+std::string FormatV(const StringConversionMagick& fmt, va_list list)
 {
 	std::string result;
 	AppendFmtV(result, fmt, list);
 	return result;
 }
 
-__nodebug std::string Format(const char* fmt, ...)
+std::string Format(const char* fmt, ...)
 {
 	va_list list;
 	va_start(list, fmt);
