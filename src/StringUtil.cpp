@@ -457,3 +457,51 @@ std::string SanitizeUtf8(const std::string& str) {
 
 	return result;
 }
+
+std::optional<bool> StringUtil::_template_impl::ConvertToBool(std::string const& rval) {
+	bool result = 1;
+	if (!rval.empty()) {
+		bool parse_error;
+		result = StringUtil::getBoolean(rval, &parse_error);
+		if (parse_error) {
+			errno = EINVAL;
+			return {};
+		}
+	}
+	return { result };
+}
+
+std::optional<double> StringUtil::_template_impl::ConvertFromString_f64(std::string const& rval) {
+	char *endptr = nullptr;
+	const char* valstr = rval.c_str();
+	auto value = strtod(valstr, &endptr);
+	if (endptr == valstr) {
+		errno = EINVAL;
+		return {};
+	}
+	return { value };
+}
+
+std::optional<float> StringUtil::_template_impl::ConvertFromString_f32(std::string const& rval) {
+	char *endptr = nullptr;
+	const char* valstr = rval.c_str();
+	auto value = strtof(valstr, &endptr);
+	if (endptr == valstr) {
+		errno = EINVAL;
+		return {};
+	}
+	return { value };
+}
+
+template<> std::optional<bool    > StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertToBool(rval);	}
+template<> std::optional<uint32_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint32_t>(rval); }
+template<> std::optional< int32_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int32_t>(rval); }
+template<> std::optional<uint64_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint64_t>(rval); }
+template<> std::optional< int64_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int64_t>(rval); }
+template<> std::optional<uint16_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint16_t>(rval); }
+template<> std::optional< int16_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int16_t>(rval); }
+template<> std::optional<uint8_t > StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint8_t >(rval); }
+template<> std::optional< int8_t > StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int8_t >(rval); }
+template<> std::optional<float>    StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_f32(rval); }
+template<> std::optional<double>   StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_f64(rval); }
+

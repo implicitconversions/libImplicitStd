@@ -157,5 +157,3 @@ template<> StdOptionString<float>    ConvertFromString(std::string const& rval) 
 template<> StdOptionString<double>   ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_f64(rval); }
 } // namespace
 
-
-

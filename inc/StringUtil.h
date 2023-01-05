@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <algorithm>
 
 #include <cstdarg>
 
@@ -217,3 +218,40 @@ bool StrParseSizeArg(char const* src, T& dest) {
 }
 
 std::string SanitizeUtf8(const std::string& str);
+
+
+namespace StringUtil::_template_impl {
+	template<bool isSigned>
+	auto _strtoj_tmpl(char const* src, char** endptr=nullptr, int radix=0) {
+		if constexpr(isSigned) {
+			return strtosj(src, endptr, radix);
+		}
+		else {
+			return strtouj(src, endptr, radix);
+		}
+	}
+
+	extern std::optional<bool> ConvertToBool(std::string const& rval);
+
+	template<typename T>
+	std::optional<T> ConvertFromString_integrals(std::string const& rval) {
+		if (rval.empty()) {
+			return {};
+		}
+
+		auto result = _strtoj_tmpl<std::is_signed_v<T>> (rval.c_str());
+		if (result != (T)result) {
+			errno = ERANGE;
+			return { std::clamp<decltype(result)>(result, std::numeric_limits<T>::min(), std::numeric_limits<T>::max()) };
+		}
+		return { result };
+	}
+
+	std::optional<double> ConvertFromString_f64(std::string const& rval);
+	std::optional<float > ConvertFromString_f32(std::string const& rval);
+}
+
+namespace StringUtil {
+	template<typename T> 
+	std::optional<T> Parse(std::string const& rval);
+}
