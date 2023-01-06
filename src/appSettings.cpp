@@ -56,7 +56,7 @@ bool appHasSetting(const std::string& name) {
 }
 
 // returns 'exists' and 'value'
-std::optional<bool> _getSettingBool(std::map<std::string, std::string> const& map, const std::string& name) {
+StdOptionString<bool> _getSettingBool(std::map<std::string, std::string> const& map, const std::string& name) {
 	auto it = map.find(name);
 	if (it == map.end()) return {};
 
@@ -74,7 +74,7 @@ std::optional<bool> _getSettingBool(std::map<std::string, std::string> const& ma
 			return {};
 		}
 	}
-	return result;
+	return std::pair { result, name };
 }
 
 bool appGetSettingBool(const std::string& name, bool nonexist_result) {
@@ -118,11 +118,11 @@ bool appSettingDeprecationCheck(std::string const& name, std::string const& depr
 	return false;
 }
 
-std::optional<bool> _template_impl::ConvertToBool(std::string const& rval) {
+StdOptionString<bool> _template_impl::ConvertToBool(std::string const& rval) {
 	return _getSettingBool(g_map, rval);
 }
 
-std::optional<double> _template_impl::ConvertFromString_f64(std::string const& rval) {
+StdOptionString<double> _template_impl::ConvertFromString_f64(std::string const& rval) {
 	char *endptr = nullptr;
 	const char* valstr = rval.c_str();
 	auto value = strtod(valstr, &endptr);
@@ -130,10 +130,10 @@ std::optional<double> _template_impl::ConvertFromString_f64(std::string const& r
 		errno = EINVAL;
 		return {};
 	}
-	return value;
+	return std::pair { value, rval };
 }
 
-std::optional<float> _template_impl::ConvertFromString_f32(std::string const& rval) {
+StdOptionString<float> _template_impl::ConvertFromString_f32(std::string const& rval) {
 	char *endptr = nullptr;
 	const char* valstr = rval.c_str();
 	auto value = strtof(valstr, &endptr);
@@ -141,20 +141,20 @@ std::optional<float> _template_impl::ConvertFromString_f32(std::string const& rv
 		errno = EINVAL;
 		return {};
 	}
-	return value;
+	return std::pair { value, rval };
 }
 
-template<> std::optional<bool    > ConvertFromString(std::string const& rval) { return _template_impl::ConvertToBool(rval); }
-template<> std::optional<uint32_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint32_t>(rval); }
-template<> std::optional< int32_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int32_t>(rval); }
-template<> std::optional<uint64_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint64_t>(rval); }
-template<> std::optional< int64_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int64_t>(rval); }
-template<> std::optional<uint16_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint16_t>(rval); }
-template<> std::optional< int16_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int16_t>(rval); }
-template<> std::optional<uint8_t > ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint8_t >(rval); }
-template<> std::optional< int8_t > ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int8_t >(rval); }
-template<> std::optional<float>    ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_f32(rval); }
-template<> std::optional<double>   ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_f64(rval); }
+template<> StdOptionString<bool    > ConvertFromString(std::string const& rval) { return _template_impl::ConvertToBool(rval);	}
+template<> StdOptionString<uint32_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint32_t>(rval); }
+template<> StdOptionString< int32_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int32_t>(rval); }
+template<> StdOptionString<uint64_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint64_t>(rval); }
+template<> StdOptionString< int64_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int64_t>(rval); }
+template<> StdOptionString<uint16_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint16_t>(rval); }
+template<> StdOptionString< int16_t> ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int16_t>(rval); }
+template<> StdOptionString<uint8_t > ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint8_t >(rval); }
+template<> StdOptionString< int8_t > ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int8_t >(rval); }
+template<> StdOptionString<float>    ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_f32(rval); }
+template<> StdOptionString<double>   ConvertFromString(std::string const& rval) { return _template_impl::ConvertFromString_f64(rval); }
 } // namespace
 
 

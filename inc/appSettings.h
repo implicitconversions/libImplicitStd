@@ -22,6 +22,10 @@ public:
 		return _MyBase_::value().first;
 	}
 
+	T value_or(T const& other) const {
+		return _MyBase_::has_value() ? _MyBase_::value().first : other;
+	}
+
 	bool empty() const {
 		return !_MyBase_::has_value() || _MyBase_::value().second.empty();
 	}
@@ -58,10 +62,10 @@ namespace icyAppSettingsIfc
 	extern bool appSettingDeprecationCheck(std::string const& name, std::string const& deprecated_alias);
 
 	template<typename T> 
-	std::optional<T> ConvertFromString(std::string const& rval);
+	StdOptionString<T> ConvertFromString(std::string const& rval);
 
 	template<typename T> 
-	std::optional<T> appGetSettingOpt(StdStringTempArg name) {
+	StdOptionString<T> appGetSettingOpt(StdStringTempArg name) {
 		auto rval = appGetSetting(name);
 		if (rval.empty()) {
 			return {};
@@ -108,10 +112,10 @@ namespace icyAppSettingsIfc
 			}
 		}
 
-		extern std::optional<bool> ConvertToBool(std::string const& rval);
+		extern StdOptionString<bool> ConvertToBool(std::string const& rval);
 
 		template<typename T>
-		std::optional<T> ConvertFromString_integrals(std::string const& rval) {
+		StdOptionString<T> ConvertFromString_integrals(std::string const& rval) {
 			if (rval.empty()) {
 				return {};
 			}
@@ -119,12 +123,12 @@ namespace icyAppSettingsIfc
 			auto result = _strtoj_tmpl<std::is_signed_v<T>> (rval.c_str());
 			if (result != (T)result) {
 				errno = ERANGE;
-				return std::clamp<decltype(result)>(result, std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
+				return std::pair { std::clamp<decltype(result)>(result, std::numeric_limits<T>::min(), std::numeric_limits<T>::max()), rval };
 			}
-			return result;
+			return std::pair { result, rval };
 		}
 
-		std::optional<double> ConvertFromString_f64(std::string const& rval);
-		std::optional<float > ConvertFromString_f32(std::string const& rval);
+		StdOptionString<double> ConvertFromString_f64(std::string const& rval);
+		StdOptionString<float > ConvertFromString_f32(std::string const& rval);
 	}
 };
