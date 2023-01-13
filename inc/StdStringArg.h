@@ -2,6 +2,8 @@
 
 #include <string>
 #include <string_view>
+#include <cstring>
+#include <climits>
 #include <cassert>
 
 // StringConversionMagick - struct meant for use as an aide in function parameter passing only.

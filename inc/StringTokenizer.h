@@ -42,8 +42,8 @@ inline char* strtok_ajek(char* (&curr), char* (&next), char delim)
 
 inline std::string_view strtok_view(char const* (&curr), char const* (&next), char delim)
 {
-	if (!curr) return nullptr;
-	if (!curr[0]) return nullptr;
+	if (!curr) return {};
+	if (!curr[0]) return {};
 
 	next = strchr_ajek(curr, delim);
 
