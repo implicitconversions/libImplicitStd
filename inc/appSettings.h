@@ -98,7 +98,8 @@ namespace icyAppSettingsIfc
 		if (!cvtResult) {
 			return false;
 		}
-		return cvtResult.value();
+		outDest = cvtResult.value();
+		return true;
 	}
 
 	namespace _template_impl {
