@@ -156,6 +156,45 @@ public:
 		return *this;
 	}
 
+	/**
+	 * Returns a list of the path components.
+	 */
+	std::vector<std::string> split_path() const {
+		if (uni_path_.empty()) {
+			return {};
+		}
+
+		std::vector<std::string> result;
+		size_t index = 0;
+
+		// Absolute path
+		if (uni_path_[0] == '/') {
+			result.push_back("/");
+			index++;
+		}
+
+		char delims[2] = { (char)separator, 0 };
+
+		for (;;) {
+			if (auto pos = uni_path_.find(separator, index); pos != std::string::npos) {
+				std::string token = StringUtil::trim(uni_path_.substr(index, pos-index), delims);
+				if (!token.empty()) {
+					result.emplace_back(std::move(token));
+				}
+				index = pos + 1;
+			}
+			else {
+				auto token = StringUtil::trim(uni_path_.substr(index));
+				if (!token.empty()) {
+					result.emplace_back(std::move(token));
+				}
+				break;
+			}
+		}
+
+		return result;
+	}
+
 
 	bool is_absolute() const {
 		return (!uni_path_.empty() && uni_path_[0] == separator);
