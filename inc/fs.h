@@ -113,8 +113,8 @@ public:
 	//	return *this;
 	//}
 
-	__nodebug bool empty() const { return uni_path_.empty(); }
-	__nodebug void clear() { uni_path_.clear(); libc_path_.clear(); }
+	bool empty() const { return uni_path_.empty(); }
+	void clear() { uni_path_.clear(); libc_path_.clear(); }
 
 	path& append(const std::string& comp);
 	path& concat(const std::string& src);
@@ -217,16 +217,16 @@ public:
 	}
 
 	// POSIX style alias for C++ 'parent_path()'
-	[[nodiscard]] __nodebug path dirname() const { return parent_path(); }
+	[[nodiscard]] path dirname() const { return parent_path(); }
 
 	// std::string conversions
-	[[nodiscard]] __nodebug const char* c_str				() const { return libc_path().c_str(); }
-	[[nodiscard]] __nodebug const std::string& string		() const { return libc_path(); }
-	[[nodiscard]] __nodebug const std::string& u8string		() const { return libc_path(); }
-	[[nodiscard]] __nodebug const std::string& uni_string	() const { return uni_path_; }		// always u8string
+	[[nodiscard]] const char* c_str				() const { return libc_path().c_str(); }
+	[[nodiscard]] const std::string& string		() const { return libc_path(); }
+	[[nodiscard]] const std::string& u8string	() const { return libc_path(); }
+	[[nodiscard]] const std::string& uni_string	() const { return uni_path_; }		// always u8string
 
-	[[nodiscard]] __nodebug operator const char*			() const { return libc_path().c_str(); }
-	[[nodiscard]] __nodebug operator const std::string&		() const { return libc_path(); }
+	[[nodiscard]] operator const char*			() const { return libc_path().c_str(); }
+	[[nodiscard]] operator const std::string&	() const { return libc_path(); }
 
 	bool  operator == (const path& s)           const;
 	bool  operator != (const path& s)           const;
@@ -239,33 +239,33 @@ public:
 	bool  operator <  (const path& s)           const;
 	bool  operator <= (const path& s)           const;
 
-	__nodebug path& operator /= (const fs::path& fpath)         { return append(fpath.uni_path_); }
-	__nodebug path  operator /  (const fs::path& fpath)   const { return path(*this).append(fpath.uni_path_); }
+	path& operator /= (const fs::path& fpath)         { return append(fpath.uni_path_); }
+	path  operator /  (const fs::path& fpath)   const { return path(*this).append(fpath.uni_path_); }
 
 	template<int len>
-	__nodebug path& operator /= (const char (&src)[len])        { return append(src); }
+	path& operator /= (const char (&src)[len])        { return append(src); }
 	template<int len>
-	__nodebug path  operator /  (const char (&src)[len])  const { return path(*this).append(src); }
+	path  operator /  (const char (&src)[len])  const { return path(*this).append(src); }
 
-	__nodebug path& operator /= (const char *src)               { return append(src); }
-	__nodebug path  operator /  (const char *src)         const { return path(*this).append(src); }
+	path& operator /= (const char *src)               { return append(src); }
+	path  operator /  (const char *src)         const { return path(*this).append(src); }
 
-	__nodebug path& operator /= (const std::string& name)       { return append(name); }
-	__nodebug path  operator /  (const std::string& name) const { return path(*this).append(name); }
-	__nodebug path  operator +  (const std::string& ext)  const { return path(*this).concat(ext); }
-	__nodebug path& operator += (const std::string& ext)	    { return concat(ext); }
+	path& operator /= (const std::string& name)       { return append(name); }
+	path  operator /  (const std::string& name) const { return path(*this).append(name); }
+	path  operator +  (const std::string& ext)  const { return path(*this).concat(ext); }
+	path& operator += (const std::string& ext)	      { return concat(ext); }
 
-	__nodebug std::string asLibcStr() const { return libc_path(); }
+	std::string asLibcStr() const { return libc_path(); }
 
-	__nodebug static std::string asLibcStr(const char* src) {
+	static std::string asLibcStr(const char* src) {
 		return fs::path(src).asLibcStr();
 	}
-	__nodebug static std::string asLibcStr(const fs::path& src) {
+	static std::string asLibcStr(const fs::path& src) {
 		return src.asLibcStr();
 	}
 public:
-	[[nodiscard]] __nodebug std::string& raw_modifiable_uni () { return uni_path_; }
-	__nodebug void raw_commit_modified() { update_native_path(); }
+	[[nodiscard]] std::string& raw_modifiable_uni () { return uni_path_; }
+	void raw_commit_modified() { update_native_path(); }
 
 protected:
 	[[nodiscard]] const std::string& libc_path() const;
