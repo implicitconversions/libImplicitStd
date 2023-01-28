@@ -106,7 +106,7 @@ namespace StringUtil {
 	}
 
 	template<class StdStrT> void AppendFmtV(StdStrT& result, const StringConversionMagick& fmt, va_list list);
-	template<class StdStrT> void AppendFmt (StdStrT& result, const char* fmt, ...);
+	template<class StdStrT> void AppendFmt (StdStrT& result, const char* fmt, ...) __verify_fmt(2,3);
 
 
 	extern std::string		FormatV		(const StringConversionMagick& fmt, va_list list);
@@ -175,11 +175,11 @@ inline bool strIsEmpty(StringConversionMagick const& view) {
 #if defined(VERIFY_PRINTF_ON_MSVC)
 #	define sFmtStr(...)		            (VERIFY_PRINTF_ON_MSVC(__VA_ARGS__), StringUtil::Format(__VA_ARGS__)        )
 #	define cFmtStr(...)		            (StringBuilder<256>().format(__VA_ARGS__).c_str())
-#	define AppendFmtStr(dest, fmt, ...)	(VERIFY_PRINTF_ON_MSVC(fmt, __VA_ARGS__), StringUtil::AppendFmt(dest, fmt, ## __VA_ARGS__))
+#	define sAppendFmt(dest, fmt, ...)	(VERIFY_PRINTF_ON_MSVC(fmt, __VA_ARGS__), StringUtil::AppendFmt(dest, fmt, ## __VA_ARGS__))
 #else
 #	define sFmtStr(...)		            (StringUtil::Format(__VA_ARGS__)        )
 #	define cFmtStr(...)		            (StringBuilder<256>().format(__VA_ARGS__).c_str())
-#	define AppendFmtStr(dest, fmt, ...)	(StringUtil::AppendFmt(dest, fmt, ## __VA_ARGS__))
+#	define sAppendFmt(dest, fmt, ...)	(StringUtil::AppendFmt(dest, fmt, ## __VA_ARGS__))
 #endif
 
 extern double CvtTimePostfixToScalar(char const* endptr);
