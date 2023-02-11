@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StringBuilder.h"
+
 #include <cstdarg>
 #include <cassert>
 

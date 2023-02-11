@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AppSettings.h"
+#include "icyAppSettingsBase.h"
 #include <map>
 #include <optional>
 

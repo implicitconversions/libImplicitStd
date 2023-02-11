@@ -1,5 +1,9 @@
 #pragma once
 
+// Usage Notes:
+//   Including this file directly is not recommended. It should be included through a proxy header that
+//   either exposes the base namespace globally, or wraps it in a desired structured class.
+
 #include "StdStringArg.h"
 
 #include <string>
@@ -10,20 +14,23 @@
 //   if (auto path = appGetSetting("--assets-dir"); TakeStringOrDefault(path, "assets")) { }
 #define TakeStringOrDefault(val, def)  (!val.empty() || ((val = def), true))
 
+MSC_WARNING_DISABLE_PUSH()
+MSC_WARNING_DISABLE(4324)		// structure was padded due to alignment specifier, happens on SIMD types (float4, int4)
+
 template<typename T>
-class StdOptionString : public std::optional<std::pair<T, std::string>> {
+class StdOptionString : public std::optional<std::pair<std::optional<T>, std::string>> {
 private:
-	using _MyBase_ = std::optional<std::pair<T, std::string>>;
+	using _MyBase_ = std::optional<std::pair<std::optional<T>, std::string>>;
 
 public:
 	using _MyBase_::_MyBase_;
 
 	T value() const {
-		return _MyBase_::value().first;
+		return _MyBase_::value().first.has_value() ? _MyBase_::value().first.value() : T{};
 	}
 
 	T value_or(T const& other) const {
-		return _MyBase_::has_value() ? _MyBase_::value().first : other;
+		return (_MyBase_::has_value() && _MyBase_::value().first) ? _MyBase_::value().first.value() : other;
 	}
 
 	bool empty() const {
@@ -42,6 +49,7 @@ public:
 		return _MyBase_::value().second;
 	}
 };
+MSC_WARNING_DISABLE_POP()
 
 // this is stuck inside of a namespace to make it easier to override behavior without having to define a new API.
 namespace icyAppSettingsIfc

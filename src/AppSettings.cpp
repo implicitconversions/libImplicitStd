@@ -1,6 +1,6 @@
 
-#include "AppSettings.h"
-#include "AppSettingsMap.h"
+#include "opt/AppSettings.h"
+#include "icyAppSettingsMap.h"
 #include "StringUtil.h"
 #include "icy_log.h"
 
