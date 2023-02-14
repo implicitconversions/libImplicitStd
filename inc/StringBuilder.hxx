@@ -63,7 +63,7 @@ void _internalBufferFormatterImpl<AllowHeapFallback>::longbuf_appendfv(int expec
 		}
 		auto longsz = longbuf[0]->size();
 		longbuf[0]->resize(longsz+expected_len);
-		vsprintf_s(const_cast<char*>(longbuf[0]->data() + longsz), expected_len+1, fmt, argptr);
+		vsnprintf(const_cast<char*>(longbuf[0]->data() + longsz), expected_len+1, fmt, argptr);
 		va_end(argptr);
 	}
 }

@@ -74,11 +74,6 @@ CStatInfo posix_stat(const char* path) {
     };
 }
 
-bool CStatInfo::IsFile     () const { return (st_mode & _S_IFREG) == _S_IFREG  ;}
-bool CStatInfo::IsDir      () const { return (st_mode & _S_IFDIR) == _S_IFDIR  ;}
-bool CStatInfo::Exists     () const { return (st_mode & _S_IFMT ) != 0         ;}
-
-
 int posix_link(const char* existing_file, const char* link)
 {
     _unlink(link);
@@ -88,4 +83,26 @@ int posix_link(const char* existing_file, const char* link)
     }
     return 0;
 }
+
+#elif PLATFORM_POSIX && !PLATFORM_SCE
+CStatInfo posix_stat(const char* path) {
+    struct stat st;
+    if (stat(path, &st) != 0) {
+        return {};
+    }
+
+    return {
+        st.st_mode,
+        st.st_size,
+        st.st_atime,
+        st.st_mtime,
+        st.st_ctime
+    };
+}
+#endif
+
+#if !PLATFORM_SCE
+bool CStatInfo::IsFile     () const { return (st_mode & S_IFREG) == S_IFREG  ;}
+bool CStatInfo::IsDir      () const { return (st_mode & S_IFDIR) == S_IFDIR  ;}
+bool CStatInfo::Exists     () const { return (st_mode & S_IFMT ) != 0         ;}
 #endif

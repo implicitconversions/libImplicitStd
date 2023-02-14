@@ -2,16 +2,13 @@
 
 // Lightweight macro-based POSIX cross-compilation header
 
-
-#if PLATFORM_SCE    // Sony Playstation
-#	include "posix_file_sce.h"
-#endif
-
-
 // off_t is too poorly defined to be of use. Let's define our own based on intmax_t.
 using x_off_t = intmax_t;
 
-#if PLATFORM_MSW
+#if PLATFORM_SCE    // Sony Playstation
+#	include "posix_file_sce.h"
+
+#elif PLATFORM_MSW
 #	include <fcntl.h>
 #	include <io.h>
 #   include <cstdio>
@@ -35,6 +32,9 @@ using x_off_t = intmax_t;
 #	define DEFFILEMODE  (_S_IREAD | _S_IWRITE)
 
 #elif PLATFORM_POSIX
+#   include <fcntl.h>
+#   include <unistd.h>
+#   include <sys/stat.h>
 
 #	define posix_open   open
 #	define posix_read   read
@@ -43,6 +43,9 @@ using x_off_t = intmax_t;
 #	define posix_close  close
 #	define posix_lseek  lseek
 #	define posix_unlink unlink
+
+#   undef O_DIRECT
+#   define O_DIRECT 0 // requires 512-byte alignment, must refactor target buffers first
 
 #endif
 

@@ -2,6 +2,7 @@
 #include "jfmt.h"
 #include "ctype.h"
 
+#include <limits>
 #include <type_traits>
 
 // Custom string to integer conversion, simplified to return large types (defers clamping to caller) and added

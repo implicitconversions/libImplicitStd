@@ -1,6 +1,6 @@
 #pragma once
 
-#include "appSettings.h"
+#include "AppSettings.h"
 #include <map>
 #include <optional>
 

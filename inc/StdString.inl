@@ -25,7 +25,12 @@ void AppendFmtV(StdStrT& result, const StringConversionMagick& fmt, va_list list
 
 	auto curlen = result.length();
 	result.resize(destSize+curlen);
-	vsprintf_s(const_cast<char*>(result.data() + curlen), destSize+1, fmt.c_str(), list );
+    #if PLATFORM_LINUX
+    vsnprintf
+    #else
+	vsprintf_s
+    #endif
+    (const_cast<char*>(result.data() + curlen), destSize+1, fmt.c_str(), list );
 }
 
 template<typename T> __nodebug

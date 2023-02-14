@@ -244,7 +244,9 @@ path& path::concat(const std::string& src)
 	// characters on a unix filesystem).
 
 	uni_path_  += src;
+#if PLATFORM_MSW
 	libc_path_ += src;
+#endif
 	return *this;
 }
 

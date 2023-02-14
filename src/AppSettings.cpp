@@ -1,8 +1,10 @@
 
-#include "appSettings.h"
-#include "appSettingsMap.h"
+#include "AppSettings.h"
+#include "AppSettingsMap.h"
 #include "StringUtil.h"
 #include "icy_log.h"
+
+#include <limits>
 
 namespace icyAppSettingsIfc
 {

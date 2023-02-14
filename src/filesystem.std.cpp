@@ -1,5 +1,5 @@
 
-#if !!PLATFORM_MSW
+#if PLATFORM_MSW || PLATFORM_LINUX
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -10,7 +10,6 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
 namespace fs {
 
 bool path::operator == (const path& s) const { return strcasecmp(uni_path_.c_str(), s.uni_path_.c_str()) == 0; }
@@ -96,7 +95,7 @@ std::vector<path> directory_iterator(const path& fspath) {
 	if (!fs::exists(fspath)) return {};
 	std::vector<path> meh;
 	for (const std::filesystem::path& item : std::filesystem::directory_iterator(fspath.asLibcStr())) {
-		meh.push_back(item.u8string().c_str());
+		meh.push_back(item.string());
 	}
 	return meh;
 }
@@ -104,23 +103,29 @@ std::vector<path> directory_iterator(const path& fspath) {
 void directory_iterator(const std::function<void (const fs::path& path)>& func, const path& fspath) {
 	if (!fs::exists(fspath)) return;
 	for (const std::filesystem::path& item : std::filesystem::directory_iterator(fspath.asLibcStr())) {
-		func(item.u8string().c_str());
+		func(item.string());
 	}
 }
 
 const std::string& path::libc_path() const {
+#if PLATFORM_MSW
 	return libc_path_;
+#else
+	return uni_path_;
+#endif
 }
 
 void path::update_native_path() {
+#if PLATFORM_MSW
 	libc_path_ = ConvertToMsw(uni_path_);
+#endif
 }
 
 std::string absolute(const path& fspath) {
 	return std::filesystem::absolute(fspath.asLibcStr()).lexically_normal().string();
 }
 
-bool stat(const path& fspath, struct stat& st) {
+bool stat(const path& fspath, struct ::stat& st) {
 	return ::stat(fspath.asLibcStr().c_str(), &st) == 0;
 }
 

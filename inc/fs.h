@@ -47,7 +47,9 @@ class path
 {
 protected:
 	std::string		uni_path_;			// universal path, path separators are forward slashes only (may include platform prefixes)
+#if PLATFORM_SCE || PLATFORM_MSW
 	std::string		libc_path_;			// native path expected by libc and such
+#endif
 
 	static const uint8_t separator = '/';
 
@@ -114,7 +116,12 @@ public:
 	//}
 
 	bool empty() const { return uni_path_.empty(); }
-	void clear() { uni_path_.clear(); libc_path_.clear(); }
+	void clear() {
+		uni_path_.clear();
+#if PLATFORM_SCE || PLATFORM_MSW
+		libc_path_.clear();
+#endif
+	}
 
 	path& append(const std::string& comp);
 	path& concat(const std::string& src);

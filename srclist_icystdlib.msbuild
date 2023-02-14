@@ -7,7 +7,7 @@
     <_RELPATH_TO_ICYSTDLIB>$([MSBuild]::MakeRelative($(ProjectDir), $(PATH_TO_ICYSTDLIB)))</_RELPATH_TO_ICYSTDLIB>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/filesystem.msw.cpp" />
+    <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/filesystem.std.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/fs.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/StringBuilder.cpp" />
     <ClCompile Include="$(_RELPATH_TO_ICYSTDLIB)/src/msw-printf-stdout.cpp" />
