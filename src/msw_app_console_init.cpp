@@ -95,6 +95,40 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname)
 	}
 }
 
+static LONG NTAPI msw_BreakpointExceptionFilter(EXCEPTION_POINTERS* eps)
+{
+	// don't handle at all if there is a debugger attached.
+	if (::IsDebuggerPresent())
+		return EXCEPTION_CONTINUE_SEARCH;
+
+	if (eps->ExceptionRecord->ExceptionCode != EXCEPTION_BREAKPOINT)
+		return EXCEPTION_CONTINUE_SEARCH;
+
+	fprintf(stderr, "Breakpoint at %p\n", eps->ExceptionRecord->ExceptionAddress);
+	fflush(nullptr);
+
+	char const* basename = strrchr(__argv[0], '/');
+	if (!basename) basename = __argv[0];
+	basename += basename[0] == '/';
+
+	msw_WriteFullDump(eps, basename);
+
+	if (s_interactive_user_environ) {
+		char fmt_buf[MAX_APP_NAME_LEN + 24];	// avoid heap.
+		snprintf(fmt_buf, "Breakpoint - %.*s", MAX_APP_NAME_LEN, basename);
+
+		auto result = ::MessageBoxA(nullptr,
+			"Breakpoint has been hit and the process has been terminated.\n"
+			"Check the console output for details.",
+			fmt_buf,
+			MB_ICONEXCLAMATION | MB_OK
+		);
+	}
+
+	// pass exception to OS.
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
 static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 {
 	fflush(nullptr);
@@ -171,6 +205,7 @@ void msw_InitAbortBehavior() {
 	}
 
 	// Win10 no longer pops up msgs when exceptions occur. We'll need to produce crash dumps ourself...
+	AddVectoredExceptionHandler(CALL_FIRST, msw_BreakpointExceptionFilter);
 	AddVectoredExceptionHandler(CALL_FIRST, msw_PageFaultExceptionFilter);
 
 	// let's not have the app ask QA to send reports to microsoft when an abort() occurs.
