@@ -226,6 +226,11 @@ struct UniqueArray {
 		return m_size;
 	}
 
+	// to allow compatiblity with template that accept std containers (aka vector)
+	bool empty() const {
+		return m_size == 0;
+	}
+
 	using iterator               = _UniqueArray_iterator<T>;
 	using const_iterator         = _UniqueArray_const_iterator<T>;
 	using reverse_iterator       = std::reverse_iterator<iterator>;
