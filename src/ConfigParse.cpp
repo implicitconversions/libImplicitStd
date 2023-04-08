@@ -26,10 +26,10 @@ bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, C
 	// support for !include "something-else.txt"
 	if (line[0] == '!') {
 		// Shebang command.
-		bool isRequired = line.substr(1) == "require";
-		if (isRequired || line.substr(1) == "include") {
+		bool isRequired = line.substr(1, strlen("require")) == "require";
+		if (isRequired || line.substr(1, strlen("include")) == "include") {
 			auto cwd = ctx.fullpath.dirname();
-			auto pos = line.find(" \t");
+			auto pos = line.find_first_of(" \t");
 			auto include_filename = trim(line.substr(pos + 1 + 1));
 			auto include_fullpath = cwd / include_filename;
 
