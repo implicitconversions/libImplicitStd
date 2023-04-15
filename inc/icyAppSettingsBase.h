@@ -47,13 +47,11 @@ public:
 		return _MyBase_::has_value() ? _MyBase_::value().second.c_str() : nullptr;
 	}
 
-	// This function is NOT safe to use pre-main. A rational expectation is that app settings would
-	// have no business being referenced pre-main in any case.
-	std::string const& string() const {
+	std::string string() const {
 		if (_MyBase_::has_value())
 			return _MyBase_::value().second;
 		else {
-			return g_empty_stdstring;
+			return {};
 		}
 	}
 };
@@ -77,10 +75,10 @@ namespace icyAppSettingsIfc
 	extern std::tuple<std::string, bool> appGetSettingTuple(const std::string& name);
 	extern bool appSettingDeprecationCheck(std::string const& name, std::string const& deprecated_alias);
 
-	template<typename T> 
+	template<typename T>
 	StdOptionString<T> ConvertFromString(std::string const& rval);
 
-	template<typename T> 
+	template<typename T>
 	StdOptionString<T> appGetSettingOpt(StdStringTempArg name) {
 		auto rval = appGetSetting(name);
 		if (rval.empty()) {
