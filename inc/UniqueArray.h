@@ -226,6 +226,18 @@ struct UniqueArray {
 		return m_size;
 	}
 
+	size_t element_size() const {
+		return sizeof(T);
+	}
+
+	T& operator[](int idx) {
+		return m_data.get()[idx];
+	}
+
+	T const& operator[](int idx) const {
+		return m_data.get()[idx];
+	}
+
 	// to allow compatiblity with template that accept std containers (aka vector)
 	bool empty() const {
 		return m_size == 0;
