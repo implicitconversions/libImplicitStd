@@ -109,6 +109,15 @@ void directory_iterator(const std::function<void (const fs::path& path)>& func, 
 	}
 }
 
+std::vector<path> recursive_directory_iterator(const path& fspath) {
+	if (!fs::exists(fspath)) return {};
+	std::vector<path> meh;
+	for (const std::filesystem::path& item : std::filesystem::recursive_directory_iterator(fspath.asLibcStr())) {
+		meh.push_back(item.string());
+	}
+	return meh;
+}
+
 const std::string& path::libc_path() const {
 #if FILESYSTEM_NEEDS_OS_PATH
 	return libc_path_;

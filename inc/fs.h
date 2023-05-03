@@ -42,6 +42,7 @@ std::string absolute			(const path& fspath);
 
 std::vector<path>	directory_iterator(const path& path);
 void				directory_iterator(const std::function<void (const fs::path& path)>& func, const path& path);
+std::vector<path>	recursive_directory_iterator(const path& path);
 
 #if HAS_CHAR8_T
 inline std::string PathFromString		(const char8_t* path) { return PathFromString((char*)path); }
