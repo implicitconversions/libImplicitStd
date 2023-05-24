@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sstream>
 #include <string>
 #include <vector>
 #include <optional>
@@ -103,6 +104,17 @@ namespace StringUtil {
 
 	__nodebug inline bool EndsWith(const std::string& left, char right) {
 		return !left.empty() && (left[left.length()-1] == right);
+	}
+
+	inline std::vector<std::string> Split(const std::string& str, char delimiter) {
+		std::vector<std::string> parts;
+		std::istringstream iss(str);
+
+		std::string token;
+		while (std::getline(iss, token, delimiter)) {
+			parts.push_back(token);
+		}
+		return parts;
 	}
 
 	template<class StdStrT> void AppendFmtV(StdStrT& result, const StringConversionMagick& fmt, va_list list);
