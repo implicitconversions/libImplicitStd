@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <cstring>
 #include <cstdio>
+#include <process.h>		// for spawnl/atd
 #include <io.h>
 
 #pragma comment (lib, "dbghelp.lib")
@@ -15,6 +16,10 @@
 
 MASTER_DEBUGGABLE
 
+#if !defined(ENABLE_ATTACH_TO_DEBUGGER)
+#	define ENABLE_ATTACH_TO_DEBUGGER	(BUILD_CFG_INHOUSE)
+#endif
+
 // CALL_FIRST means call this exception handler first;
 // CALL_LAST means call this exception handler last
 static const int CALL_FIRST		= 1;
@@ -23,12 +28,30 @@ static const int CALL_LAST		= 0;
 const int MAX_APP_NAME_LEN = 24;
 static bool s_unattended_session = 0;
 static bool s_dump_on_abort = 1;
+static bool s_attach_to_debugger_on_exception = ENABLE_ATTACH_TO_DEBUGGER;
 
+static bool s_abort_msg_is_set = 0;
+static bool s_unattended_session_is_set = 0;
+static bool s_attached_at_startup = 0;
+
+
+char const* const g_atd_path_default      = "c:\\AttachToDebugger";
+char const* const g_env_verbose_name      = "VERBOSE";
+char const* const g_env_attach_on_start   = "ATTACH_DEBUG";
+
+
+// abort message popup is typically skipped when debugger is attached. When not attached its purpose is to
+// allow a debugger to attach, or to allow a user to ignore assertions and "hope for the best".
 void msw_set_abort_message(bool onoff) {
 	// _set_abort_behavior() only does things in debug CRT. We need popups in release builds too, so
 	// we have to manage all this ourselves anyway...
 	_set_abort_behavior(onoff, _WRITE_ABORT_MSG);
+	s_abort_msg_is_set = 1;
+}
+
+void msw_set_unattended_mode(bool onoff) {
 	s_unattended_session = onoff;
+	s_unattended_session_is_set = 1;
 }
 
 void msw_set_abort_crashdump(bool onoff) {
@@ -114,8 +137,21 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname) {
 	}
 }
 
+static bool _mswFileExists(char const* path) {
+	DWORD dwAttrib = GetFileAttributes(path);
+
+	return (
+			(dwAttrib != INVALID_FILE_ATTRIBUTES)
+		&& !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY)
+	);
+}
+
 static bool checkIfUnattended() {
-	return s_unattended_session;
+	if (s_unattended_session_is_set) {
+		return !s_unattended_session;
+	}
+
+	return DiscoverUnattendedSessionFromEnvironment();
 }
 
 void msw_ShowCrashDialog(char const* title, char const* body) {
@@ -129,72 +165,177 @@ void msw_ShowCrashDialog(char const* title, char const* body) {
 	auto result = ::MessageBoxA(nullptr, body, fmt_buf, MB_ICONEXCLAMATION | MB_OK);
 }
 
-static LONG NTAPI msw_BreakpointExceptionFilter(EXCEPTION_POINTERS* eps)
-{
-	// don't handle at all if there is a debugger attached.
-	if (::IsDebuggerPresent())
-		return EXCEPTION_CONTINUE_SEARCH;
+bool checkIfVerbose() {
+	auto* env_verbose = getenv(g_env_verbose_name);
 
-	if (eps->ExceptionRecord->ExceptionCode != EXCEPTION_BREAKPOINT)
-		return EXCEPTION_CONTINUE_SEARCH;
-
-	fprintf(stderr, "Breakpoint at %p\n", eps->ExceptionRecord->ExceptionAddress);
-	fflush(nullptr);
-
-	msw_WriteFullDump(eps, nullptr);
-
-	if (!::IsDebuggerPresent()) {
-		msw_ShowCrashDialog("SIGSEGV", 
-			"DebugBreak encountered.\n"
-			"Check the console output for details."
-		);
+	if (env_verbose && env_verbose[0]) {
+		return env_verbose[0] != '0';
 	}
 
-	// pass exception to OS.
-	return EXCEPTION_CONTINUE_SEARCH;
+	return false;
+}
+
+// Only returns TRUE if atd succeeded and debugger is verified as attached.
+static bool spawnAtdExeAndWait() {
+#if ENABLE_ATTACH_TO_DEBUGGER
+	bool verbose = checkIfVerbose();
+
+	char procstr[16];
+	auto pid = ::GetCurrentProcessId();
+	snprintf(procstr, "%d", pid); 
+
+	auto exitcode = 0;
+	char atd_exe_path[MAX_PATH] = {};
+
+	auto* bin_path = getenv("ATD_BIN_PATH");
+
+	if (verbose && bin_path && bin_path[0]) {
+		errprintf("(AttachToDebugger) ATD_BIN_PATH = %s\n", bin_path);
+	}
+
+	snprintf(atd_exe_path, "%s\\%s", bin_path ? bin_path : g_atd_path_default, "atd.exe"); 
+	if (_mswFileExists(atd_exe_path)) {
+		if (verbose) {
+			errprintf("(AttachToDebugger) explicit atd.exe found = %s\n", atd_exe_path);
+		}
+		exitcode = _spawnl(_P_WAIT, atd_exe_path, atd_exe_path, procstr, nullptr);
+	}
+	else {
+		if (verbose) {
+			errprintf("(AttachToDebugger) trying to run atd.exe via PATH...\n");
+		}
+		exitcode = _spawnlp(_P_WAIT, "atd.exe", "atd.exe", procstr, nullptr);
+	}
+
+	if (exitcode) {
+		if (exitcode < 0) {
+			auto err = errno;
+			errprintf("(AttachToDebugger) failed to spawn atd.exe: %s (%d)\n", strerror(err), err);
+		}
+		else {
+			errprintf("(AttachToDebugger) atd.exe error code %d\n", exitcode);
+		}
+
+		if (!verbose) {
+			errprintf("Run with %s=1 to log diagnostic information\n", g_env_verbose_name);
+		}
+	
+		return false;
+	}
+
+	errprintf("Debugger requested for pid=%s, waiting for debugger to attach... ", procstr);
+	fflush(nullptr);
+	::Sleep(250);
+
+	while (!::IsDebuggerPresent()) {
+		::Sleep(60);
+	}
+	errprintf("Attached!\n");
+	return true;
+#endif
+
+	return false;
+}
+
+static void checkAndSetCrtAbortBehavior() {
+	if (s_abort_msg_is_set) {
+		return;
+	}
+
+	bool shouldShowAbort = !checkIfUnattended() && !_isatty(fileno(stdin));
+	_set_abort_behavior(shouldShowAbort, _WRITE_ABORT_MSG);
 }
 
 static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 {
-	fflush(nullptr);
+	char const* excname = nullptr;
+	switch (eps->ExceptionRecord->ExceptionCode) {
+		case EXCEPTION_ACCESS_VIOLATION	   : excname = "SIGSEGV";					break;
+		case EXCEPTION_BREAKPOINT		   : excname = "Breakpoint";				break;
+		case EXCEPTION_PRIV_INSTRUCTION	   : excname = "Privileged Instruction";	break;
+		case EXCEPTION_ILLEGAL_INSTRUCTION : excname = "Illegal Instruction";		break;
+		case EXCEPTION_STACK_OVERFLOW      : excname = "Stack Overflow";			break;
+		case EXCEPTION_GUARD_PAGE	       : excname = "Guard Page Violation";		break;
+	}
 
-	if(eps->ExceptionRecord->ExceptionCode != EXCEPTION_ACCESS_VIOLATION)
+	//errprintf("(%s) Crash info!\n", excname);
+
+	if (!excname) {
 		return EXCEPTION_CONTINUE_SEARCH;
+	}
 
-	// MS hides the target address of the load/store operation in the second
-	// parameter in ExceptionInformation.
-
-	void* access_address = (void*)eps->ExceptionRecord->ExceptionInformation[1];
-	bool isWrite         = eps->ExceptionRecord->ExceptionInformation[0];
-
-	fprintf(stderr, "PageFault %s at %p\n", isWrite ? "write" : "read", access_address);
 	fflush(nullptr);
 
-	msw_WriteFullDump(eps, nullptr);
+	bool verbose = checkIfVerbose();
+	bool isUnattended = checkIfUnattended();
+
+
+	if (eps->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+		// MS hides the target address of the load/store operation in the second
+		// parameter in ExceptionInformation.
+		void* access_address = (void*)eps->ExceptionRecord->ExceptionInformation[1];
+		bool isWrite         = eps->ExceptionRecord->ExceptionInformation[0];
+		errprintf("PageFault %s at %p\n", isWrite ? "write" : "read", access_address);
+		fflush(nullptr);
+	}
+
+	if (verbose) {
+		errprintf("(%s) unattended mode = %d\n", excname, isUnattended);
+	}
 
 	if (!::IsDebuggerPresent()) {
-		msw_ShowCrashDialog("SIGSEGV", 
-			"ACCESS VIOLATION (SIGSEGV) encountered.\n"
-			"Check the console output for details."
+		if (!isUnattended && s_attach_to_debugger_on_exception) {
+			// this will end up re-attaching debugger if using attachment on startup and detaching while a
+			// breakpoint is stopped in the debugger. This only happens for exceptions with "First-chance exception"
+			// feature enabled in visual studio. There's not much we can do about that since first chance exceptions
+			// avoid our exception handler entirely, meaning the application has no way of knowing when they happen.
+			// The fix is to disable first-chance exceptions for all Win32 excetpions. They're useless anyway, and
+			// interfere with advanced emulator designs that rely on pagefaults to track memory accesses (JITs, etc).
+			if (spawnAtdExeAndWait()) {
+				checkAndSetCrtAbortBehavior();
+				// Continuing execution from here will result in the debugger picking up the breakpoint
+				// at exactly the expected place in the callstack.
+				return EXCEPTION_CONTINUE_SEARCH;
+			}
+		}
+
+		msw_WriteFullDump(eps, nullptr);
+
+		char message_body[1024];
+
+		snprintf(message_body, 
+			"%s encountered. Application will be closed.\n"
+			"Attach a debugger before hitting OK to debug the crash.\n"
+			"Check the console output for more details.",
+			excname
 		);
+
+		msw_ShowCrashDialog(excname, message_body);
 	}
 
 	// pass pagefault to OS, it'll add an entry to the pointlessly over-engineered Windows Event Viewer.
+	// Also, if user attached a debugger while the messagebox was modal, this will hook into the debugger
+	// for them (nifty!).
+
+	checkAndSetCrtAbortBehavior();
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
 void SignalHandler(int signal)
 {
 	if (signal == SIGABRT) {
-		if (!::IsDebuggerPresent()) {
-			if (s_dump_on_abort) {
-				msw_WriteFullDump(nullptr, nullptr);
+		if (!s_abort_handler_no_debug) {
+			if (!::IsDebuggerPresent()) {
+				if (s_dump_on_abort) {
+					msw_WriteFullDump(nullptr, nullptr);
+				}
+				msw_ShowCrashDialog("ABORT", 
+					"An error has occured and the application has aborted.\n"
+					"Check the console output for details."
+				);
 			}
-			msw_ShowCrashDialog("ABORT", 
-				"An error has occured and the application has aborted.\n"
-				"Check the console output for details."
-			);
 		}
+
 
 		// can't just return out because of a bug in Debug Static CRT that incorrectly deconstructs TLS.
 		// (abort implciitly calls _Exit() internally after returning from this handler)
@@ -213,14 +354,12 @@ void msw_InitAbortBehavior() {
 	}
 
 	// Win10 no longer pops up msgs when exceptions occur. We'll need to produce crash dumps ourself...
-	AddVectoredExceptionHandler(CALL_FIRST, msw_BreakpointExceptionFilter);
 	AddVectoredExceptionHandler(CALL_FIRST, msw_PageFaultExceptionFilter);
 
 	// let's not have the app ask QA to send reports to microsoft when an abort() occurs.
 	_set_abort_behavior(0, _CALL_REPORTFAULT);
 
 #if !defined(_DEBUG)
-
 	typedef void (*SignalHandlerPointer)(int);
 	auto previousHandler = signal(SIGABRT, SignalHandler);
 #endif
