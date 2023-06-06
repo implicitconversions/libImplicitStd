@@ -5,11 +5,13 @@
 #include <signal.h>
 #include <cstring>
 #include <cstdio>
+#include <io.h>
 
 #pragma comment (lib, "dbghelp.lib")
 
 #include "msw_app_console_init.h"
 #include "StringUtil.h"
+#include "EnvironUtil.h"
 
 MASTER_DEBUGGABLE
 
@@ -19,14 +21,14 @@ static const int CALL_FIRST		= 1;
 static const int CALL_LAST		= 0;
 
 const int MAX_APP_NAME_LEN = 24;
-static bool s_interactive_user_environ = 1;
+static bool s_unattended_session = 0;
 static bool s_dump_on_abort = 1;
 
 void msw_set_abort_message(bool onoff) {
 	// _set_abort_behavior() only does things in debug CRT. We need popups in release builds too, so
 	// we have to manage all this ourselves anyway...
 	_set_abort_behavior(onoff, _WRITE_ABORT_MSG);
-	s_interactive_user_environ = onoff;
+	s_unattended_session = onoff;
 }
 
 void msw_set_abort_crashdump(bool onoff) {
@@ -113,7 +115,7 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname) {
 }
 
 static bool checkIfUnattended() {
-	return !s_interactive_user_environ;
+	return s_unattended_session;
 }
 
 void msw_ShowCrashDialog(char const* title, char const* body) {
@@ -223,35 +225,6 @@ void msw_InitAbortBehavior() {
 	auto previousHandler = signal(SIGABRT, SignalHandler);
 #endif
 
-	// abort message popup is typically skipped when debugger is attached. When not attached its purpose is to
-	// allow a debugger to attach, or to allow a user to ignore assertions and "hope for the best".
-	msw_set_abort_message(1);
-
-	auto* automated_flag    = getenv("AUTOMATED");
-	auto* noninteract_flag  = getenv("NONINTERACTIVE");
-	auto* jenkins_node_name = getenv("NODE_NAME");
-	auto* jenkins_job_name  = getenv("JOB_NAME");
-
-	bool allow_popups = 1;
-
-	// heuristically autodetect jenkins first, and honor explicit AUTOMATED/NONINTERACTIVE afterward.
-
-	if ((jenkins_node_name && jenkins_node_name[0]) &&
-		(jenkins_job_name  && jenkins_job_name [0])) {
-		allow_popups = 0;
-	}
-
-	if (automated_flag  ) allow_popups   = (automated_flag  [0] != '0');
-	if (noninteract_flag) allow_popups   = (noninteract_flag[0] != '0');
-
-	// when MSYS BASH shell is present somewhere, assume the user doesn't want or need popups.
-	// (can be overridden by CLI switch in the main app, etc)
-	if (getenv("SHLVL")) {
-		allow_popups = 0;
-	}
-
-	msw_set_abort_message(allow_popups);
-
 	// Tell the system not to display the critical-error-handler message box.
 	// from msdn: Best practice is that all applications call the process-wide SetErrorMode function
 	//     with a parameter of SEM_FAILCRITICALERRORS at startup. This is to prevent error mode dialogs
@@ -260,6 +233,15 @@ void msw_InitAbortBehavior() {
 	// Translation: disable this silly ill-advised legacy behavior. --jstine
 	// (note in Win10, popups are disabled by default and cannot be re-enabled anyway)
 	::SetErrorMode(SEM_FAILCRITICALERRORS);
+
+#if ENABLE_ATTACH_TO_DEBUGGER
+	if (!::IsDebuggerPresent()) {
+		auto const* env_attach = getenv(g_env_attach_on_start);
+		if (env_attach && env_attach[0] && env_attach[0] != '0') {
+			s_attached_at_startup = spawnAtdExeAndWait();
+		}
+	}
+#endif
 }
 
 static void modehack(DWORD handle, bool allocated) {

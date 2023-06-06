@@ -19,6 +19,22 @@
 #   endif
 #endif
 
+#if !defined(PLATFORM_POSIX)
+#	if __has_include(<unistd.h>)
+#		define PLATFORM_POSIX 1
+#	else
+#		define PLATFORM_POSIX 0
+#	endif
+#endif
+
+#if !defined(PLATFORM_LINUX)
+#   ifdef __linux__
+#		define PLATFORM_LINUX 1
+#	else
+#		define PLATFORM_LINUX 0
+#	endif
+#endif
+
 #if !defined(PLATFORM_MSCRT)
 #   if defined(_WIN32)
 #       define PLATFORM_MSCRT   1
@@ -41,3 +57,4 @@
 
 #define PLATFORM_SCE (PLATFORM_PS4 || PLATFORM_PS5)
 
+#define PLATFORM_HAS_GETENV (PLATFORM_MSW || PLATFORM_LINUX || PLATFORM_MAC)
