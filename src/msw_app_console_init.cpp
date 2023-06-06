@@ -33,6 +33,13 @@ void msw_set_abort_crashdump(bool onoff) {
 	s_dump_on_abort = onoff;
 }
 
+static bool s_abort_handler_no_debug = false;
+
+void msw_abort_no_debug() {
+	s_abort_handler_no_debug = true;
+	abort();
+}
+
 static char const* getBasenameFromArgv0() {
 	char const* basename = strrchr(__argv[0], '/');
 	if (!basename) basename = __argv[0];
@@ -186,6 +193,10 @@ void SignalHandler(int signal)
 				"Check the console output for details."
 			);
 		}
+
+		// can't just return out because of a bug in Debug Static CRT that incorrectly deconstructs TLS.
+		// (abort implciitly calls _Exit() internally after returning from this handler)
+		exitNoCleanup(SIGABRT);
 	}
 }
 
@@ -335,5 +346,16 @@ void msw_SetConsoleCP() {
 	modehack(STD_OUTPUT_HANDLE, false);
 	modehack(STD_ERROR_HANDLE , false);
 }
+
+#if !defined(exitNoCleanup)
+void exitNoCleanup(int exit_code) {
+	// can't call _Exit() because of a bug in Debug Static MSCRT that incorrectly deconstructs TLS.
+	// Even when using  Release MSCRT _Exit() isn't what we want: it sometimes call ExitProcess instead
+	// of TerminateProcess, which also deconstructs threads (sigh). So TerminateProcess it is. 
+
+	fflush(nullptr);
+	::TerminateProcess(::GetCurrentProcess(), exit_code);
+}
+#endif
 
 #endif
