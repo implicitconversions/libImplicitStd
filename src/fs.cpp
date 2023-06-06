@@ -16,6 +16,20 @@
 
 namespace fs
 {
+std::string s_app0_dir;
+
+// Applies an AppRoot for the entire process.
+// This workaround is provided for packaged environments that don't provide an option to modify the CWD
+// at runtime - like Game Consoles and Mobile Apps.
+void setAppRoot(std::string src) {
+	s_app0_dir = src;
+
+	if (!StringUtil::EndsWith(s_app0_dir, ('/' )) &&
+		!StringUtil::EndsWith(s_app0_dir, ('\\'))
+	) {
+		s_app0_dir.push_back(PLATFORM_MSW ? '\\' : '/');
+	}
+}
 
 std::string remove_extension(const std::string& path, const std::string& ext_to_remove) {
 
@@ -183,6 +197,9 @@ std::string ConvertToMsw(const std::string& unix_path)
 	// If a component sets a root dir to /dev/null then all files supposed to be created under that dir
 	// will become pipes in/out of /dev/null
 
+	bool is_cwd = 0;
+	bool is_special_root = 0;
+
 	if (src[0] == '/') {
 		if (unix_path == "/dev/null" || StringUtil::BeginsWith(unix_path, "/dev/null/")) {
 			return "NUL";
@@ -206,15 +223,40 @@ std::string ConvertToMsw(const std::string& unix_path)
 		// relative to current dir, just strip the ".\"
 		src += 2;
 	}
-	// copy rest of the string char for char, replacing '/' with '\\'
-	for(; src[0]; ++src, ++dst) {
-		dst[0] = (src[0] == '/') ? '\\' : src[0];
+	else if (src[0] == '/') {
+		if (StringUtil::BeginsWith(unix_path, "/cwd/")) {
+			src += 5;
+			is_cwd = 1;
+		}
+		else {
+			is_special_root = 1;
+		}
 	}
-	dst[0] = 0;
+
+	if (is_special_root) {
+		for(; src[0]; ++src, ++dst) {
+			dst[0] = src[0];
+		}
+		dst[0] = 0;
+	}
+	else {
+		// copy rest of the string char for char, replacing '/' with '\\'
+		for(; src[0]; ++src, ++dst) {
+			dst[0] = (src[0] == '/') ? '\\' : src[0];
+		}
+		dst[0] = 0;
+	}
+
 	ptrdiff_t newsize = dst - result.c_str();
 	house_check(newsize <= ptrdiff_t(unix_path.length()));
-	result.resize(newsize);
-	return result;
+
+	if (is_cwd) {
+		return s_app0_dir + result;
+	}
+	else {
+		result.resize(newsize);
+		return result;
+	}
 }
 
 path& path::append(const std::string& comp)

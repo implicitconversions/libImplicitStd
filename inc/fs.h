@@ -43,6 +43,9 @@ void				directory_iterator(const std::function<void (const fs::path& path)>& fun
 inline std::string PathFromString		(const char8_t* path) { return PathFromString((char*)path); }
 #endif
 
+extern std::string s_app0_dir;		// prepended to all relative paths when they are converted to libc-consumable strings.
+extern void setAppRoot(std::string src);
+
 class path
 {
 protected:
