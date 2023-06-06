@@ -112,7 +112,7 @@ void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFun
 		if (!arg[0]) continue;
 		if (!StringUtil::BeginsWith(arg, "--")) {
 			// do not trim any whitespace, this is a positional parameter (not an argument or switch)
-			push_item(lvalue, {});
+			push_item(arg, {});
 			continue;
 		}
 
