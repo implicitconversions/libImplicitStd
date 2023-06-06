@@ -33,8 +33,18 @@ void msw_set_abort_crashdump(bool onoff) {
 	s_dump_on_abort = onoff;
 }
 
-void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname)
-{
+static char const* getBasenameFromArgv0() {
+	char const* basename = strrchr(__argv[0], '/');
+	if (!basename) basename = __argv[0];
+	basename += basename[0] == '/';
+	return basename;
+}
+
+void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname) {
+	if (!dumpname) {
+		dumpname = getBasenameFromArgv0();
+	}
+
 	DWORD Flags = MiniDumpNormal;
 
 	Flags |= MiniDumpWithDataSegs;
@@ -63,7 +73,7 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname)
 	}
 
 	char dumpfile[MAX_PATH];
-	sprintf_s(dumpfile, "%.*s-crash.dmp", MAX_APP_NAME_LEN, dumpname);
+	snprintf(dumpfile, "%.*s-crash.dmp", MAX_APP_NAME_LEN, dumpname);
 
 	if (!dumpfile[0]) {
 		// the filename is too long, a dump cannot be written (this should be unreachable since we're just writing
@@ -95,6 +105,21 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname)
 	}
 }
 
+static bool checkIfUnattended() {
+	return !s_interactive_user_environ;
+}
+
+void msw_ShowCrashDialog(char const* title, char const* body) {
+	if (checkIfUnattended()) {
+		return;
+	}
+
+	// surface it to the user if no debugger attached, if debugger it likely already popped up an exception dialog...
+	char fmt_buf[MAX_APP_NAME_LEN + 96];	// avoid heap, it could be corrupt
+	snprintf(fmt_buf, "%s - %.*s", title, MAX_APP_NAME_LEN, getBasenameFromArgv0());
+	auto result = ::MessageBoxA(nullptr, body, fmt_buf, MB_ICONEXCLAMATION | MB_OK);
+}
+
 static LONG NTAPI msw_BreakpointExceptionFilter(EXCEPTION_POINTERS* eps)
 {
 	// don't handle at all if there is a debugger attached.
@@ -107,21 +132,12 @@ static LONG NTAPI msw_BreakpointExceptionFilter(EXCEPTION_POINTERS* eps)
 	fprintf(stderr, "Breakpoint at %p\n", eps->ExceptionRecord->ExceptionAddress);
 	fflush(nullptr);
 
-	char const* basename = strrchr(__argv[0], '/');
-	if (!basename) basename = __argv[0];
-	basename += basename[0] == '/';
+	msw_WriteFullDump(eps, nullptr);
 
-	msw_WriteFullDump(eps, basename);
-
-	if (s_interactive_user_environ) {
-		char fmt_buf[MAX_APP_NAME_LEN + 24];	// avoid heap.
-		snprintf(fmt_buf, "Breakpoint - %.*s", MAX_APP_NAME_LEN, basename);
-
-		auto result = ::MessageBoxA(nullptr,
-			"Breakpoint has been hit and the process has been terminated.\n"
-			"Check the console output for details.",
-			fmt_buf,
-			MB_ICONEXCLAMATION | MB_OK
+	if (!::IsDebuggerPresent()) {
+		msw_ShowCrashDialog("SIGSEGV", 
+			"DebugBreak encountered.\n"
+			"Check the console output for details."
 		);
 	}
 
@@ -145,21 +161,12 @@ static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 	fprintf(stderr, "PageFault %s at %p\n", isWrite ? "write" : "read", access_address);
 	fflush(nullptr);
 
-	char const* basename = strrchr(__argv[0], '/');
-	if (!basename) basename = __argv[0];
-	basename += basename[0] == '/';
+	msw_WriteFullDump(eps, nullptr);
 
-	msw_WriteFullDump(eps, basename);
-
-	if (s_interactive_user_environ && !::IsDebuggerPresent()) {
-		// surface it to the user if no debugger attached, if debugger it likely already popped up an exception dialog...
-		char fmt_buf[MAX_APP_NAME_LEN + 24];	// avoid heap, it could be corrupt
-		snprintf(fmt_buf, "SIGSEGV - %.*s", MAX_APP_NAME_LEN, basename);
-		auto result = ::MessageBoxA(nullptr,
-			"ACCESS VIOLATION (SIGSEGV) has occurred and the process has been terminated. "
-			"Check the console output for more details.",
-			fmt_buf,
-			MB_ICONEXCLAMATION | MB_OK
+	if (!::IsDebuggerPresent()) {
+		msw_ShowCrashDialog("SIGSEGV", 
+			"ACCESS VIOLATION (SIGSEGV) encountered.\n"
+			"Check the console output for details."
 		);
 	}
 
@@ -170,25 +177,13 @@ static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 void SignalHandler(int signal)
 {
 	if (signal == SIGABRT) {
-		if (!s_dump_on_abort) {
-			return;
-		}
-
-		char const* basename = strrchr(__argv[0], '/');
-		if (!basename) basename = __argv[0];
-		basename += basename[0] == '/';
-
-		msw_WriteFullDump(nullptr, basename);
-
-		if (s_interactive_user_environ && !::IsDebuggerPresent()) {
-			char fmt_buf[MAX_APP_NAME_LEN + 24];	// avoid heap.
-			snprintf(fmt_buf, "abort() - %.*s", MAX_APP_NAME_LEN, basename);
-
-			auto result = ::MessageBoxA(nullptr,
+		if (!::IsDebuggerPresent()) {
+			if (s_dump_on_abort) {
+				msw_WriteFullDump(nullptr, nullptr);
+			}
+			msw_ShowCrashDialog("ABORT", 
 				"An error has occured and the application has aborted.\n"
-				"Check the console output for details.",
-				fmt_buf,
-				MB_ICONEXCLAMATION | MB_OK
+				"Check the console output for details."
 			);
 		}
 	}
