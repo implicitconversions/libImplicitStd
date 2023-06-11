@@ -116,7 +116,7 @@ void _internalBufferFormatterImpl<AllowHeapFallback>::append(char ch) {
 }
 
 
-template<bool AllowHeapFallback> __always_inline
+template<bool AllowHeapFallback> __va_inline
 void _internalBufferFormatterImpl<AllowHeapFallback>::appendfv(const char* fmt, va_list args) {
 	if (expect_false(!fmt || !fmt[0])) return;
 
@@ -184,13 +184,13 @@ StringBuilder<bufsize>& StringBuilder<bufsize>::append(char ch) {
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> __va_inline
 StringBuilder<bufsize>& StringBuilder<bufsize>::appendfv(const char* fmt, va_list args) {
 	_internalFormatterSpillToHeap{buffer, bufsize, wpos, &longbuf}.appendfv(fmt, args);
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> __va_inline
 StringBuilder<bufsize>& StringBuilder<bufsize>::appendf(const char* fmt, ...) {
 	va_list argptr;
 	va_start(argptr, fmt);
@@ -199,13 +199,13 @@ StringBuilder<bufsize>& StringBuilder<bufsize>::appendf(const char* fmt, ...) {
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> __va_inline
 StringBuilder<bufsize>& StringBuilder<bufsize>::formatv(const char* fmt, va_list args) {
 	clear();
 	return appendfv(fmt, args);
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> __va_inline
 StringBuilder<bufsize>& StringBuilder<bufsize>::format(const char* fmt, ...) {
 	va_list argptr;
 	va_start(argptr, fmt);
@@ -233,13 +233,13 @@ StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::append(char ch) {
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> __va_inline
 StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::appendfv(const char* fmt, va_list args) {
 	_internalFormatterTruncate{buffer, bufsize, wpos}.appendfv(fmt, args);
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> __va_inline
 StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::appendf(const char* fmt, ...) {
 	va_list argptr;
 	va_start(argptr, fmt);
@@ -248,13 +248,13 @@ StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::appendf(const char* fm
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> __va_inline
 StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::formatv(const char* fmt, va_list args) {
 	clear();
 	return appendfv(fmt, args);
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> __va_inline
 StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::format(const char* fmt, ...) {
 	va_list argptr;
 	va_start(argptr, fmt);
