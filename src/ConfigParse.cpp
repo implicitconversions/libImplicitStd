@@ -98,6 +98,18 @@ void ParseArgumentsToArgcArgv(const std::vector<std::string>& arguments, std::fu
 	callback(argv.size() - 1, argv.data());
 }
 
+// Finds the first character after '=' and returns a pointer to that. Only suitable for use
+// CLI arguments, because it does not consider quotes or whitespace: whitespace and quotes
+// handling is done by the shell invoker, allowing us to take the string literally as provided.
+extern char const* ConfigParseSingleArg(char const* input, char const *lvalue, int lvalue_length) {
+	if (lvalue_length <= 0) return nullptr;
+	if (strncmp(input, lvalue, lvalue_length) == 0) {
+		if (input[lvalue_length] == '=') {
+			return input + lvalue_length + 1;
+		}
+	}
+	return nullptr;
+}
 
 void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFunc& push_item) {
 	// Do not strip quotes when parsing arguments -- the commandline processor (cmd/bash)

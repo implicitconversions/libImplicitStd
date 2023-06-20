@@ -39,6 +39,7 @@ static bool s_attached_at_startup = 0;
 char const* const g_atd_path_default      = "c:\\AttachToDebugger";
 char const* const g_env_verbose_name      = "VERBOSE";
 char const* const g_env_attach_debugger   = "ATTACH_DEBUG";
+char const* const g_env_wait_debugger     = "WAIT_DEBUG";
 
 // performs a boolean check that doesn't depend on underlying libraries, except as a fallback
 // for considering all possible forms of booelans. (burden is on the developer to use '1' or '0'
@@ -455,6 +456,12 @@ void msw_InitAbortBehavior() {
 	if (!::IsDebuggerPresent()) {
 		if (check_boolean_semi_safe(getenv(g_env_attach_debugger))) {
 			s_attached_at_startup = spawnAtdExeAndWait();
+		}
+
+		if (!s_attached_at_startup && check_boolean_semi_safe(getenv(g_env_wait_debugger))) {
+			errprintf("*** WAITING FOR DEBUGGER...\n");
+			while(!::IsDebuggerPresent()) { ::Sleep(60); }
+			errprintf("*** DEBUGGER ATTACHED.\n");
 		}
 	}
 #endif
