@@ -13,6 +13,7 @@
 #include "msw_app_console_init.h"
 #include "StringUtil.h"
 #include "EnvironUtil.h"
+#include "defer.h"
 
 MASTER_DEBUGGABLE
 
@@ -73,6 +74,10 @@ void msw_set_unattended_mode(bool onoff) {
 	s_unattended_session_is_set = 1;
 }
 
+void msw_set_auto_attach_debug(bool onoff) {
+	s_attach_to_debugger_on_exception = onoff;
+}
+
 void msw_set_abort_crashdump(bool onoff) {
 	s_dump_on_abort = onoff;
 }
@@ -90,6 +95,8 @@ static char const* getBasenameFromArgv0() {
 	basename += basename[0] == '/';
 	return basename;
 }
+
+static DWORD volatile s_coredumps_in_flight;
 
 void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname) {
 	if (!dumpname) {
@@ -134,6 +141,7 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname) {
 
 	// GENERIC_WRITE, FILE_SHARE_READ used to minimize vectors for failure.
 	// I've had multiple issues of this crap call failing for some permission denied reason. --jstine
+	InterlockedIncrement(&s_coredumps_in_flight);
 	if (HANDLE hFile = CreateFileA(dumpfile, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr); hFile != INVALID_HANDLE_VALUE) {
 		BOOL Result = MiniDumpWriteDump(
 			::GetCurrentProcess(),
@@ -153,6 +161,9 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname) {
 		else {
 			fprintf(stderr, "Crashdump written to %s\n", dumpfile);
 		}
+
+		fflush(nullptr);
+		InterlockedDecrement(&s_coredumps_in_flight);
 	}
 }
 
@@ -167,7 +178,7 @@ static bool _mswFileExists(char const* path) {
 
 static bool checkIfUnattended() {
 	if (s_unattended_session_is_set) {
-		return !s_unattended_session;
+		return s_unattended_session;
 	}
 
 	return DiscoverUnattendedSessionFromEnvironment();
@@ -178,20 +189,65 @@ void msw_ShowCrashDialog(char const* title, char const* body) {
 		return;
 	}
 
-	// surface it to the user if no debugger attached, if debugger it likely already popped up an exception dialog...
-	char fmt_buf[MAX_APP_NAME_LEN + 96];	// avoid heap, it could be corrupt
-	snprintf(fmt_buf, "%s - %.*s", title, MAX_APP_NAME_LEN, getBasenameFromArgv0());
-	auto result = ::MessageBoxA(nullptr, body, fmt_buf, MB_ICONEXCLAMATION | MB_OK);
+	// use a simple imperfect guard to avoid issuing multiple popups if many threads crash at the same time.
+	// Secondary threads spin on the atomic until the first releases, to avoid preemptively crashing the app
+	// by invoking EXCEPTION_CONTINUE_SEARCH while dialog for the first thread is shown.
+
+	static std::atomic_bool s_dlg_shown;
+	bool expected = false;
+
+	if (s_dlg_shown.compare_exchange_strong(expected, true)) {
+		// surface it to the user if no debugger attached, if debugger it likely already popped up an exception dialog...
+		char fmt_buf[MAX_APP_NAME_LEN + 96];	// avoid heap, it could be corrupt
+		snprintf(fmt_buf, "%s - %.*s", title, MAX_APP_NAME_LEN, getBasenameFromArgv0());
+		auto result = ::MessageBoxA(nullptr, body, fmt_buf, MB_ICONEXCLAMATION | MB_OK);
+		s_dlg_shown = false;
+	}
+	else {
+		// don't print description, it's not useful here.
+		errprintf("Async %s occured while waiting for crash dialog. Holding thread until dialog is retired.\n", title);
+		while (s_dlg_shown) { Sleep(5); }
+	}
 }
 
-bool checkIfVerbose() {
+static bool checkIfVerbose() {
 	return check_boolean_semi_safe(getenv(g_env_verbose_name));
+}
+
+static void writeFullDumpGuarded(char const* excname, EXCEPTION_POINTERS* pep, const char* dumpname) {
+	static std::atomic_bool s_once_coredump_written; 
+	bool expected = false;
+	if (s_once_coredump_written.compare_exchange_strong(expected, true)) {
+		msw_WriteFullDump(pep, nullptr);
+	}
+}
+
+// If a crash/abort occurs while a coredump is being written, hold here to allow it to finish.
+// Timeout after ~10 mins, because stuck processes are annoying.
+static void holdThreadUntilDumpFinishes() {
+	int sleep_slice_ms = 50;
+	int timeout = (10*60*1000) / sleep_slice_ms;
+	while (s_coredumps_in_flight > 0) {
+		::Sleep(sleep_slice_ms);
+		if (--timeout < 0) {
+			errprintf("timed out waiting for coredump to complete");
+			s_coredumps_in_flight = 0;		// force release all threads.
+			break;
+		}
+	}
 }
 
 // Only returns TRUE if atd succeeded and debugger is verified as attached.
 static bool spawnAtdExeAndWait() {
 #if ENABLE_ATTACH_TO_DEBUGGER
 	bool verbose = checkIfVerbose();
+
+	static std::atomic_bool s_attach_excl;
+	bool expected = false;
+	if (!s_attach_excl.compare_exchange_strong(expected, true)) {
+		while (s_attach_excl) { Sleep(5); }
+		return ::IsDebuggerPresent();
+	}
 
 	char procstr[16];
 	auto pid = ::GetCurrentProcessId();
@@ -261,6 +317,11 @@ static void checkAndSetCrtAbortBehavior() {
 
 static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 {
+	Defer(
+		checkAndSetCrtAbortBehavior();
+		holdThreadUntilDumpFinishes();
+	);
+
 	char const* excname = nullptr;
 	switch (eps->ExceptionRecord->ExceptionCode) {
 		case EXCEPTION_ACCESS_VIOLATION	   : excname = "SIGSEGV";					break;
@@ -305,14 +366,13 @@ static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 			// The fix is to disable first-chance exceptions for all Win32 excetpions. They're useless anyway, and
 			// interfere with advanced emulator designs that rely on pagefaults to track memory accesses (JITs, etc).
 			if (spawnAtdExeAndWait()) {
-				checkAndSetCrtAbortBehavior();
 				// Continuing execution from here will result in the debugger picking up the breakpoint
 				// at exactly the expected place in the callstack.
 				return EXCEPTION_CONTINUE_SEARCH;
 			}
 		}
 
-		msw_WriteFullDump(eps, nullptr);
+		writeFullDumpGuarded(excname, eps, nullptr);
 
 		char message_body[1024];
 
@@ -326,10 +386,12 @@ static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 		msw_ShowCrashDialog(excname, message_body);
 	}
 
+
 	// pass pagefault to OS, it'll add an entry to the pointlessly over-engineered Windows Event Viewer.
 	// Also, if user attached a debugger while the messagebox was modal, this will hook into the debugger
 	// for them (nifty!).
 
+	holdThreadUntilDumpFinishes();
 	checkAndSetCrtAbortBehavior();
 	return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -340,7 +402,7 @@ void SignalHandler(int signal)
 		if (!s_abort_handler_no_debug) {
 			if (!::IsDebuggerPresent()) {
 				if (s_dump_on_abort) {
-					msw_WriteFullDump(nullptr, nullptr);
+					writeFullDumpGuarded("ABORT", nullptr, nullptr);
 				}
 				msw_ShowCrashDialog("ABORT", 
 					"An error has occured and the application has aborted.\n"
@@ -349,6 +411,8 @@ void SignalHandler(int signal)
 			}
 		}
 
+		checkAndSetCrtAbortBehavior();
+		holdThreadUntilDumpFinishes();
 
 		// can't just return out because of a bug in Debug Static CRT that incorrectly deconstructs TLS.
 		// (abort implciitly calls _Exit() internally after returning from this handler)
@@ -370,6 +434,7 @@ void msw_InitAbortBehavior() {
 	AddVectoredExceptionHandler(CALL_FIRST, msw_PageFaultExceptionFilter);
 
 	// let's not have the app ask QA to send reports to microsoft when an abort() occurs.
+	// (_WRITE_ABORT_MSG is established later, according to unattended mode settings)
 	_set_abort_behavior(0, _CALL_REPORTFAULT);
 
 #if !defined(_DEBUG)

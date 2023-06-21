@@ -10,6 +10,7 @@ void msw_AllocConsoleForWindowedApp();
 void msw_set_abort_message(bool onoff);
 void msw_set_abort_crashdump(bool onoff);
 void msw_set_unattended_mode(bool onoff);
+void msw_set_auto_attach_debug(bool onoff);
 void msw_abort_no_debug();
 
 // the following functions should already get called pre-main automatically.
