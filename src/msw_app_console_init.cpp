@@ -37,8 +37,27 @@ static bool s_attached_at_startup = 0;
 
 char const* const g_atd_path_default      = "c:\\AttachToDebugger";
 char const* const g_env_verbose_name      = "VERBOSE";
-char const* const g_env_attach_on_start   = "ATTACH_DEBUG";
+char const* const g_env_attach_debugger   = "ATTACH_DEBUG";
 
+// performs a boolean check that doesn't depend on underlying libraries, except as a fallback
+// for considering all possible forms of booelans. (burden is on the developer to use '1' or '0'
+// if they really want this to be the fully safe no-dependencies check).
+bool check_boolean_semi_safe(char const* rvalue, bool defaultNonExist=false) {
+	if (!rvalue || !rvalue[0]) {
+		return defaultNonExist;
+	}
+
+	// fast check for '1' first without invoking our own libraries.
+	if (rvalue[0] == '1' && !rvalue[1]) {
+		return true;
+	}
+	else if (rvalue[0] == '0' && !rvalue[1]) {
+		return false;
+	}
+	else {
+		return StringUtil::getBoolean(rvalue);
+	}
+}
 
 // abort message popup is typically skipped when debugger is attached. When not attached its purpose is to
 // allow a debugger to attach, or to allow a user to ignore assertions and "hope for the best".
@@ -166,13 +185,7 @@ void msw_ShowCrashDialog(char const* title, char const* body) {
 }
 
 bool checkIfVerbose() {
-	auto* env_verbose = getenv(g_env_verbose_name);
-
-	if (env_verbose && env_verbose[0]) {
-		return env_verbose[0] != '0';
-	}
-
-	return false;
+	return check_boolean_semi_safe(getenv(g_env_verbose_name));
 }
 
 // Only returns TRUE if atd succeeded and debugger is verified as attached.
@@ -375,8 +388,7 @@ void msw_InitAbortBehavior() {
 
 #if ENABLE_ATTACH_TO_DEBUGGER
 	if (!::IsDebuggerPresent()) {
-		auto const* env_attach = getenv(g_env_attach_on_start);
-		if (env_attach && env_attach[0] && env_attach[0] != '0') {
+		if (check_boolean_semi_safe(getenv(g_env_attach_debugger))) {
 			s_attached_at_startup = spawnAtdExeAndWait();
 		}
 	}
