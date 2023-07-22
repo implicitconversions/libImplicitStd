@@ -9,6 +9,7 @@
 #include <string>
 #include <optional>
 #include <algorithm>
+#include <limits>
 
 // helper for C++17's compound (assignment;conditional) style if() statements. Always returns TRUE. Example:
 //   if (auto path = appGetSetting("--assets-dir"); TakeStringOrDefault(path, "assets")) { }

@@ -5,6 +5,8 @@
 #include <vector>
 #include <optional>
 #include <algorithm>
+#include <limits>
+#include <tuple>
 
 #include <cstdarg>
 

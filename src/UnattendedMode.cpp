@@ -1,6 +1,5 @@
 
 #include <cstdlib>
-#include "EnvironUtil.h"
 #include "StringUtil.h"
 
 extern bool check_boolean_semi_safe(char const* rvalue, bool defaultNonExist=false);
