@@ -22,18 +22,26 @@
 #define ICY_TRACE1(f,l) ICY_TRACE2(f,l)
 #define ICY_TRACE       ICY_TRACE1(__FILE__, __LINE__)
 
-#if !defined(dbg_check)
-#	define dbg_check(cond, ...)		((cond) || (fprintf(stderr, ICY_TRACE "(assert failed) " # cond ": " __VA_ARGS__ ), abort(),0))
+#if !defined(app_abort)
+#	define app_abort(...)		    (fprintf(stderr, ICY_TRACE "(abort) " __VA_ARGS__ ), abort(),0)
 #endif
 
-#if !defined(dbg_abort)
-#	define dbg_abort(...)		    (fprintf(stderr, ICY_TRACE "(abort) " __VA_ARGS__ ), abort(),0)
+#if !defined(assertR)
+#	define assertR(cond, ...)		((cond) || (fprintf(stderr, ICY_TRACE "(assert failed) " # cond ": " __VA_ARGS__ ), abort(),0))
 #endif
 
-#if !defined(house_check)
-#	define house_check(cond, ...)	((cond) || (fprintf(stderr, ICY_TRACE "(assert failed) " # cond ": " __VA_ARGS__ ), abort(),0))
+#if !defined(assertD)
+#	if ENABLE_DEBUG_ASSERT
+#		define assertD(cond, ...)		assertR(cond, __VA_ARGS__)
+#	else
+#		define assertD(cond, ...)
+#	endif
 #endif
 
-#if !defined(house_abort)
-#	define house_abort(...)		    (fprintf(stderr, ICY_TRACE "(abort) " __VA_ARGS__ ), abort(),0)
+#if !defined(assertH)
+#	if ENABLE_HOUSE_ASSERT
+#		define assertH(cond, ...)		assertR(cond, __VA_ARGS__)
+#	else
+#		define assertH(cond, ...)
+#	endif
 #endif

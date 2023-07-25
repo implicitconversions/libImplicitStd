@@ -248,7 +248,7 @@ std::string ConvertToMsw(const std::string& unix_path)
 	}
 
 	ptrdiff_t newsize = dst - result.c_str();
-	house_check(newsize <= ptrdiff_t(unix_path.length()));
+	assertH(newsize <= ptrdiff_t(unix_path.length()));
 
 	if (is_cwd) {
 		return s_app0_dir + result;

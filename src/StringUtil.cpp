@@ -8,7 +8,7 @@
 #include <limits>
 #include <optional>
 
-#include "StdString.inl"
+#include "StdString.hxx"
 
 #if !defined(PLATFORM_MSW)
 #   if defined(_MSC_VER)
@@ -269,7 +269,7 @@ std::tuple<intmax_t, bool> StrParseSizeArg(char const* src) {
 // performs globbing on pattern strings, including support for escaping (backslash). This means that the following
 // characters can be matched if preceeded by backslash:: * ? [ ]
 //    Example:  "Question\?"
-// 
+//
 // This function is suitable for glob-matching plain text C/C++ identifiers and most filenames.
 //
 bool StringUtil::globMatch(char const* pattern, char const* candidate) {
@@ -309,7 +309,7 @@ bool StringUtil::globMatch(char const* pattern, char const* candidate) {
 		}
 		elif (expect_false(*globwalk == '*')) {
 			char match_next = globwalk[1];
-				
+
 			while(namewalk[1] && namewalk[1] != match_next) {
 				++namewalk;
 			}

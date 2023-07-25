@@ -31,7 +31,8 @@ using x_off_t = intmax_t;
 #	define O_DIRECT		(0)		// does not exist on windows
 #	define DEFFILEMODE  (_S_IREAD | _S_IWRITE)
 
-#elif PLATFORM_POSIX
+#else	// assume POSIX compliant as the fallback.
+
 #   include <fcntl.h>
 #   include <unistd.h>
 #   include <sys/stat.h>
@@ -47,10 +48,6 @@ using x_off_t = intmax_t;
 #   undef O_DIRECT
 #   define O_DIRECT 0 // requires 512-byte alignment, must refactor target buffers first
 
-#endif
-
-#if !defined(posix_close)
-#	error Unsupported platform.
 #endif
 
 struct CStatInfo;

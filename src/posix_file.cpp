@@ -29,7 +29,7 @@ size_t _pread(int fd, void* dest, size_t count, x_off_t pos)
         auto toread = std::min(count, int_max);
         auto amt = _read(fd, dest, (int)toread);
         count -= amt;
-        dbg_check(count >= 0);
+        assertD(count >= 0);
         if (amt != int_max) {
             return orig_count - count;
         }
@@ -40,7 +40,7 @@ size_t _pread(int fd, void* dest, size_t count, x_off_t pos)
 CStatInfo posix_fstat(int fd) {
     struct _stat64 sinfo;
     if (_fstat64 (fd, &sinfo) == -1) {
-        dbg_check(false, "_fstat64(%d) failed, code=%d (%s)", fd, errno, strerror(errno));
+        assertD(false, "_fstat64(%d) failed, code=%d (%s)", fd, errno, strerror(errno));
         return {};
     }
 
@@ -83,8 +83,9 @@ int posix_link(const char* existing_file, const char* link)
     }
     return 0;
 }
+#endif
 
-#elif PLATFORM_POSIX && !PLATFORM_SCE
+#if PLATFORM_POSIX
 CStatInfo posix_stat(const char* path) {
     struct stat st;
     if (stat(path, &st) != 0) {
@@ -99,10 +100,9 @@ CStatInfo posix_stat(const char* path) {
         st.st_ctime
     };
 }
+
 #endif
 
-#if !PLATFORM_SCE
 bool CStatInfo::IsFile     () const { return (st_mode & S_IFREG) == S_IFREG  ;}
 bool CStatInfo::IsDir      () const { return (st_mode & S_IFDIR) == S_IFDIR  ;}
-bool CStatInfo::Exists     () const { return (st_mode & S_IFMT ) != 0         ;}
-#endif
+bool CStatInfo::Exists     () const { return (st_mode & S_IFMT ) != 0        ;}

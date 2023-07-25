@@ -17,7 +17,7 @@ void AppendFmtV(StdStrT& result, const StringConversionMagick& fmt, va_list list
 	destSize = vsnprintf(nullptr, 0, fmt.c_str(), argcopy);
 	va_end(argcopy);
 
-	dbg_check(destSize >= 0, "Invalid string formatting parameters");
+	assertD(destSize >= 0, "Invalid string formatting parameters");
 
 	// vsnprintf doesn't count terminating '\0', and resize() doesn't expect it either.
 	// Thus, the following resize() will ensure +1 room for the null that vsprintf_s
