@@ -1,15 +1,17 @@
 
-#if PLATFORM_MSW || PLATFORM_LINUX
-#include <vector>
-#include <string>
-#include <cstdio>
-#include <filesystem>
 
 #include "fs.h"
 #include "icy_log.h"
 
+#if USE_STD_FILESYSTEM
+
+#include <vector>
+#include <string>
+#include <cstdio>
+#include <filesystem>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 namespace fs {
 
 bool path::operator == (const path& s) const { return strcasecmp(uni_path_.c_str(), s.uni_path_.c_str()) == 0; }
@@ -108,7 +110,7 @@ void directory_iterator(const std::function<void (const fs::path& path)>& func, 
 }
 
 const std::string& path::libc_path() const {
-#if PLATFORM_MSW
+#if FILESYSTEM_NEEDS_OS_PATH
 	return libc_path_;
 #else
 	return uni_path_;
@@ -116,7 +118,7 @@ const std::string& path::libc_path() const {
 }
 
 void path::update_native_path() {
-#if PLATFORM_MSW
+#if FILESYSTEM_NEEDS_OS_PATH
 	libc_path_ = ConvertToMsw(uni_path_);
 #endif
 }

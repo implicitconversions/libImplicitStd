@@ -286,7 +286,7 @@ path& path::concat(const std::string& src)
 	// characters on a unix filesystem).
 
 	uni_path_  += src;
-#if PLATFORM_MSW
+#if FILESYSTEM_NEEDS_OS_PATH
 	libc_path_ += src;
 #endif
 	return *this;

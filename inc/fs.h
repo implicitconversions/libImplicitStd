@@ -6,8 +6,12 @@
 
 #include "StringUtil.h"
 
-#if PLATFORM_PS4
-#define fread_s(a, b, c, d, e) fread(a, c, d, e)
+#if !defined(USE_STD_FILESYSTEM)
+#	define USE_STD_FILESYSTEM    1
+#endif
+
+#if !defined(FILESYSTEM_NEEDS_OS_PATH)
+#	define FILESYSTEM_NEEDS_OS_PATH		(PLATFORM_SCE || PLATFORM_MSW)
 #endif
 
 namespace fs {
@@ -74,7 +78,7 @@ public:
 		update_native_path();
 	}
 
-#if HAS_CHAR8_T	
+#if HAS_CHAR8_T
 	path(const char8_t* src) {
 		uni_path_ = fs::PathFromString(src);
 		update_native_path();
@@ -139,13 +143,12 @@ public:
 		// implementation note: returns a string because a filename will itself never have
 		// variances based on host OS / platform.
 
-		std::string extension;
 		auto pos = uni_path_.find_last_of('.');
 
 		if (pos != std::string::npos)
-			extension = uni_path_.substr(pos);
+			return uni_path_.substr(pos);
 
-		return extension;
+		return {};
 	}
 
 	std::string filename() const {
