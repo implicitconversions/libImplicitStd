@@ -43,7 +43,6 @@ char *_stristr(const char *haystack, const char *needle)
 }
 #endif
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Why strcpy_ajek?
 //
@@ -173,6 +172,43 @@ std::string ReplaceCharSet(std::string srccopy, const char* to_replace, char new
 		}
 	}
 	return srccopy;
+}
+
+ptrdiff_t CompareCase(std::string_view lval, std::string_view rval)
+{
+    uint8_t const* lvp = (uint8_t*)lval.data();
+    uint8_t const* rvp = (uint8_t*)rval.data();
+
+	auto maxlen = std::min(lval.size(), rval.size());
+
+    for (; maxlen != 0; maxlen--, lvp++, rvp++) {
+		auto lvl = tolower(*lvp);
+		auto rvl = tolower(*rvp);
+		if (auto diff = lvl - rvl; diff) {
+			return diff;
+		}
+    }
+    return 0;
+}
+
+ptrdiff_t FindFirstCase(std::string_view s, std::string_view find) {
+	uint8_t const* fptr = (uint8_t*)find.data();
+	uint8_t const* sptr = (uint8_t*)s.data();
+
+	int first_c = tolower(*fptr);
+	auto remain = (ptrdiff_t)(s.size() - find.size());
+
+	while (remain >= 0) {
+		if (tolower(*sptr) == first_c) {
+			if (strncasecmp(sptr, fptr, find.size()) == 0) {
+				return sptr - (uint8_t*)s.data();
+			}
+		}
+		--remain;
+		++sptr;
+	}
+
+	return {};
 }
 
 } // namespace StringUtil
