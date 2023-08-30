@@ -17,11 +17,9 @@
 #if _MSC_VER
 #	define __section_declare_ro(section_name) __pragma (section  (section_name, read))
 #	define __section_item_ro(section_name)    __declspec(allocate(section_name))
-#elif defined(__clang__)
-#	define PRAGMA_SECTION(arg) __pragma(clang section rodata=arg)
+#else
+#	define PRAGMA_SECTION(arg) __pragma(gcc section rodata=arg)
 
 #	define __section_declare_ro(section_name)
 #	define __section_item_ro(section_name)    PRAGMA_SECTION(section_name)
-#else
-#	error Unimplemented compiler macro.
 #endif

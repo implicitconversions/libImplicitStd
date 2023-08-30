@@ -9,6 +9,7 @@
 #include <tuple>
 
 #include <cstdarg>
+#include <cstring>
 
 #include "jfmt.h"
 #include "StdStringArg.h"
@@ -22,12 +23,18 @@
 #   endif
 #endif
 
-#if defined(_MSC_VER)
-extern char *_stristr(const char *haystack, const char *needle);
+#if defined(__MINGW64__)
+	// MINGW64 defines strcasecmp and strncasecmp itself as macros in <cstring> but this interferes
+	// with our desire to use function overloading in C++.
+#	undef strcasecmp
+#	undef strncasecmp
+#endif
 
-inline auto strcasecmp  (char const* a, char const* b)              { return _stricmp (a,b); }
-inline auto strcasestr  (char const* a, char const* b)              { return _stristr (a,b); }
-inline auto strncasecmp (char const* a, char const* b, ptrdiff_t c) { return _strnicmp(a,b,c); }
+#if defined(_MSC_VER) || defined(__MINGW64__)
+	extern char *_stristr(const char *haystack, const char *needle);
+	inline auto strcasestr  (char const* a, char const* b)              { return _stristr (a,b); }
+	//inline auto strcasecmp  (char const* a, char const* b)              { return _stricmp (a,b); }
+	//inline auto strncasecmp (char const* a, char const* b, ptrdiff_t c) { return _strnicmp(a,b,c); }
 #endif
 
 #if !defined(HAS_strcasestr)
@@ -60,9 +67,9 @@ inline const char *strcasestr(const char *s, const char *find) {
 // These uint8_t variants are convenient for old C++, but will probably fail hard in a world with char8_t.
 // (hopefully at that point we can just ifdef them away or whatever. --jstine)
 
-__always_inline inline auto strcasecmp  (uint8_t const* a, uint8_t const* b)              { return strcasecmp  ((char*)a,(char*)b); }
-__always_inline inline auto strcasestr  (uint8_t const* a, uint8_t const* b)              { return strcasestr  ((char*)a,(char*)b); }
-__always_inline inline auto strncasecmp (uint8_t const* a, uint8_t const* b, ptrdiff_t c) { return strncasecmp ((char*)a,(char*)b,c); }
+__always_inline inline auto strcasestr  (uint8_t const* a, uint8_t const* b)              { return strcasestr  ((char const*)a, (char const*)b); }
+__always_inline inline auto strcasecmp  (uint8_t const* a, uint8_t const* b)              { return strcasecmp  ((char const*)a, (char const*)b); }
+__always_inline inline auto strncasecmp (uint8_t const* a, uint8_t const* b, ptrdiff_t c) { return strncasecmp ((char const*)a, (char const*)b,c); }
 
 // snprintf is usually preferred over other variants:
 //   - snprintf_s has annoying parameter validation and nullifies the buffer instead of truncate.

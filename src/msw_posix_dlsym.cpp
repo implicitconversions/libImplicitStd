@@ -22,10 +22,10 @@ intptr_t posix_dlopen(const fs::path& origpath, uint32_t RTLD_flags) {
 		if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND || err == ERROR_MOD_NOT_FOUND) {
 			return 0;
 		}
-		app_abort("LoadLibraryA(%s) failed, windows err 0x%08x", path.c_str(), err);
+		app_abort("LoadLibraryA(%s) failed, windows err 0x%08jx", path.c_str(), JFMT(err));
 	}
 	else {
-		errprintf("posix_dlopen(%s) opened as dlhandle=%jx\n", JFMT((intptr_t)handle));
+		errprintf("posix_dlopen(%s) opened as dlhandle=%jx\n", path.c_str(), JFMT((intptr_t)handle));
 	}
 
 	return (intptr_t)handle;
@@ -33,30 +33,30 @@ intptr_t posix_dlopen(const fs::path& origpath, uint32_t RTLD_flags) {
 
 void* posix_dlsym(intptr_t dlhandle, const char* name) {
 	assertD(dlhandle);
-	void* result = ::GetProcAddress((HMODULE) dlhandle, name);
+	auto* result = ::GetProcAddress((HMODULE) dlhandle, name);
 	if (!result) {
 		auto err = ::GetLastError();
 		if(err != ERROR_PROC_NOT_FOUND) {
-			errprintf("GetProcAddress(dlhandle=%jx, '%s') failed, windows err 0x%08x\n", JFMT(dlhandle), name, err);
+			errprintf("GetProcAddress(dlhandle=%jx, '%s') failed, windows err 0x%08jx\n", JFMT(dlhandle), name, JFMT(err));
 		}
 	}
-	return result;
+	return (void*)result;
 }
 
 void* posix_dlsymreq(intptr_t dlhandle, const char* name) {
 	assertD(dlhandle);
 
-	void* result = ::GetProcAddress((HMODULE) dlhandle, name);
+	auto* result = ::GetProcAddress((HMODULE) dlhandle, name);
 	if (!result) {
 		auto err = ::GetLastError();
 		if(err == ERROR_PROC_NOT_FOUND) {
 			app_abort("posix_dlsymreq(dlhandle=%jx, '%s') required symbol not found.", JFMT(dlhandle), name);
 		}
 		else {
-			app_abort("GetProcAddress(dlhandle=%jx, '%s') failed, windows err 0x%08x", JFMT(dlhandle), name, err);
+			app_abort("GetProcAddress(dlhandle=%jx, '%s') failed, windows err 0x%08jx", JFMT(dlhandle), name, JFMT(err));
 		}
 	}
-	return result;
+	return (void*)result;
 }
 
 bool posix_dlclose(intptr_t dlhandle) {

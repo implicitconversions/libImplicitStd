@@ -7,19 +7,20 @@
 #include <cstdio>
 #include <process.h>		// for spawnl/atd
 #include <io.h>
+#include <atomic>
 
 #pragma comment (lib, "dbghelp.lib")
 
 #include "msw_app_console_init.h"
 #include "StringUtil.h"
 #include "EnvironUtil.h"
+#include "MacroUtil.h"
 #include "defer.h"
 
 MASTER_DEBUGGABLE
 
-#if !defined(ENABLE_ATTACH_TO_DEBUGGER)
-#	define ENABLE_ATTACH_TO_DEBUGGER	(BUILD_CFG_INHOUSE)
-#endif
+extern "C" void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);	// expects result of GetStdHandle
+
 
 // CALL_FIRST means call this exception handler first;
 // CALL_LAST means call this exception handler last
@@ -29,7 +30,7 @@ static const int CALL_LAST		= 0;
 const int MAX_APP_NAME_LEN = 24;
 static bool s_unattended_session = 0;
 static bool s_dump_on_abort = 1;
-static bool s_attach_to_debugger_on_exception = ENABLE_ATTACH_TO_DEBUGGER;
+static bool s_attach_to_debugger_on_exception = 1;
 
 static bool s_abort_msg_is_set = 0;
 static bool s_unattended_session_is_set = 0;
@@ -157,7 +158,7 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname) {
 		CloseHandle(hFile);
 
 		if (!Result) {
-			fprintf(stderr, "Minidump generation failed: %08x\n", ::GetLastError());
+			fprintf(stderr, "Minidump generation failed: %08jx\n", JFMT(::GetLastError()));
 		}
 		else {
 			fprintf(stderr, "Crashdump written to %s\n", dumpfile);
@@ -216,7 +217,7 @@ static bool checkIfVerbose() {
 }
 
 static void writeFullDumpGuarded(char const* excname, EXCEPTION_POINTERS* pep, const char* dumpname) {
-	static std::atomic_bool s_once_coredump_written; 
+	static std::atomic_bool s_once_coredump_written;
 	bool expected = false;
 	if (s_once_coredump_written.compare_exchange_strong(expected, true)) {
 		msw_WriteFullDump(pep, nullptr);
@@ -252,7 +253,7 @@ static bool spawnAtdExeAndWait() {
 
 	char procstr[16];
 	auto pid = ::GetCurrentProcessId();
-	snprintf(procstr, "%d", pid); 
+	snprintf(procstr, "%d", pid);
 
 	auto exitcode = 0;
 	char atd_exe_path[MAX_PATH] = {};
@@ -263,7 +264,7 @@ static bool spawnAtdExeAndWait() {
 		errprintf("(AttachToDebugger) ATD_BIN_PATH = %s\n", bin_path);
 	}
 
-	snprintf(atd_exe_path, "%s\\%s", bin_path ? bin_path : g_atd_path_default, "atd.exe"); 
+	snprintf(atd_exe_path, "%s\\%s", bin_path ? bin_path : g_atd_path_default, "atd.exe");
 	if (_mswFileExists(atd_exe_path)) {
 		if (verbose) {
 			errprintf("(AttachToDebugger) explicit atd.exe found = %s\n", atd_exe_path);
@@ -289,7 +290,7 @@ static bool spawnAtdExeAndWait() {
 		if (!verbose) {
 			errprintf("Run with %s=1 to log diagnostic information\n", g_env_verbose_name);
 		}
-	
+
 		return false;
 	}
 
@@ -377,7 +378,7 @@ static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 
 		char message_body[1024];
 
-		snprintf(message_body, 
+		snprintf(message_body,
 			"%s encountered. Application will be closed.\n"
 			"Attach a debugger before hitting OK to debug the crash.\n"
 			"Check the console output for more details.",
@@ -405,7 +406,7 @@ void SignalHandler(int signal)
 				if (s_dump_on_abort) {
 					writeFullDumpGuarded("ABORT", nullptr, nullptr);
 				}
-				msw_ShowCrashDialog("ABORT", 
+				msw_ShowCrashDialog("ABORT",
 					"An error has occured and the application has aborted.\n"
 					"Check the console output for details."
 				);
@@ -556,7 +557,7 @@ void msw_SetConsoleCP() {
 void exitNoCleanup(int exit_code) {
 	// can't call _Exit() because of a bug in Debug Static MSCRT that incorrectly deconstructs TLS.
 	// Even when using  Release MSCRT _Exit() isn't what we want: it sometimes call ExitProcess instead
-	// of TerminateProcess, which also deconstructs threads (sigh). So TerminateProcess it is. 
+	// of TerminateProcess, which also deconstructs threads (sigh). So TerminateProcess it is.
 
 	fflush(nullptr);
 	::TerminateProcess(::GetCurrentProcess(), exit_code);

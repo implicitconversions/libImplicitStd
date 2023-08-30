@@ -12,7 +12,7 @@
 #include <string_view>
 
 // Convert an UTF8 string to a wide Unicode String
-__nodebug static std::wstring utf8_decode(std::string_view str)
+static std::wstring utf8_decode(std::string_view str)
 {
 	if (str.empty()) return {};
 	int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
@@ -21,12 +21,12 @@ __nodebug static std::wstring utf8_decode(std::string_view str)
 	return wstrTo;
 }
 
-__nodebug bool msw_IsDebuggerPresent()
+bool msw_IsDebuggerPresent()
 {
 	return ::IsDebuggerPresent() == TRUE;
 }
 
-__nodebug void msw_OutputDebugString(const char* fmt)
+void msw_OutputDebugString(const char* fmt)
 {
 	// must use OutputDebugStringW() to see UTF8 sequences in the Output window.
 	::OutputDebugStringW(utf8_decode(fmt).c_str());
@@ -64,7 +64,7 @@ static FILE* s_pipe_stdin;
 static FILE* s_pipe_stdout;
 static FILE* s_pipe_stderr;
 
-void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
+extern "C" void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
 {
 	FILE** pipedest = nullptr;
 	char const* mode = nullptr;
@@ -108,10 +108,12 @@ void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
 		else {
 			// log out the error, it'll hopefully show up in the piped file as a clue.
 			if (stdhandle != stdin) {
-				fprintf(stdhandle, "DuplicateHandle(%s) failed: Windows Error 0x%08x\nThis pipe will be closed/inactive as a result.", (stdhandle==stdout) ? "stdout" : "stderr", GetLastError());
+				fprintf(stdhandle, "DuplicateHandle(%s) failed: Windows Error 0x%08jx\nThis pipe will be closed/inactive as a result.",
+					(stdhandle==stdout) ? "stdout" : "stderr", JFMT(::GetLastError())
+				);
 			}
 			else {
-				fprintf(stderr, "DuplicateHandle(stdin) failed: Windows Error 0x%08x\n", GetLastError());
+				fprintf(stderr, "DuplicateHandle(stdin) failed: Windows Error 0x%08jx\n", JFMT(::GetLastError()));
 			}
 		}
 	}

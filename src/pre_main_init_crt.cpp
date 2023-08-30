@@ -1,4 +1,4 @@
-// Pre-Main Initialization Setip for Microsoft CRT
+// Pre-Main Initialization Setup for Microsoft CRT
 //
 // This file must be manually included into EVERY PROJECT that intends to use the msw_app_console_init system.
 // Failure to add this file to the project which generates the executable will result in misbehavior of abort
@@ -30,9 +30,9 @@ static int _init_console_behavior(void) {
 	return 0;
 };
 
+#if _MSC_VER
 // .CRT$XIC are the CRT C initializers, and anything run before those won't have stdio available.
 //   This makes .CRT$XID a good spot for our own stuff to run as early as possible, and without crashing.
-//   (as this module is microsoft windows specific, there is no need to port it to other CRT implementations)
 
 __section_declare_ro(".CRT$XIDA");
 __section_declare_ro(".CRT$XIDB");
@@ -42,5 +42,25 @@ _PIFV init_abort_behavior = _init_abort_behavior;
 
 __section_item_ro(".CRT$XIDB")
 _PIFV init_console_behavior = _init_console_behavior;
+
+#else
+// Assuming MSYS2 build environment on windows (clang/gcc)
+struct A {
+	A() {
+		_init_abort_behavior();
+	}
+};
+
+struct B {
+	B() {
+		_init_console_behavior();
+	}
+};
+
+static A s_init_abort   __attribute__ ((init_priority (101)));
+static B s_init_console __attribute__ ((init_priority (101)));
+
+#endif
+
 
 #endif

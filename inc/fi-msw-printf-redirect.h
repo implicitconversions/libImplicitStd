@@ -1,7 +1,7 @@
 #pragma once
 
 #if !defined(REDEFINE_PRINTF)
-#	if defined(_MSC_VER)
+#	if defined(_WIN32)
 #		define REDEFINE_PRINTF		1
 #	endif
 #endif
@@ -26,14 +26,29 @@
 #	define _extern_c
 #endif
 
-_extern_c int _fi_redirect_printf   (const char* fmt, ...);
-_extern_c int _fi_redirect_vfprintf (FILE* handle, const char* fmt, va_list args);
-_extern_c int _fi_redirect_fprintf  (FILE* handle, const char* fmt, ...);
-_extern_c int _fi_redirect_puts     (char const* _Buffer);
-_extern_c int _fi_redirect_fputs    (char const* _Buffer, FILE* _Stream);
-_extern_c int _fi_redirect_fputc    (int ch, FILE* _Stream);
-_extern_c intmax_t _fi_redirect_fwrite(void const* src, size_t, size_t, FILE* fp);
-_extern_c void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);	// expects result of GetStdHandle
+// these functions must be defined inside the std:: namespace to allow for code that accesses things using
+// "std::fwrite" to work in an expected manner.
+#if defined(__cplusplus)
+namespace std {
+#endif
+_extern_c int      _fi_redirect_printf   (const char* fmt, ...);
+_extern_c int      _fi_redirect_vfprintf (FILE* handle, const char* fmt, va_list args);
+_extern_c int      _fi_redirect_fprintf  (FILE* handle, const char* fmt, ...);
+_extern_c int      _fi_redirect_puts     (char const* _Buffer);
+_extern_c int      _fi_redirect_fputs    (char const* _Buffer, FILE* _Stream);
+_extern_c int      _fi_redirect_fputc    (int ch, FILE* _Stream);
+_extern_c intmax_t _fi_redirect_fwrite   (void const* src, size_t, size_t, FILE* fp);
+#if defined(__cplusplus)
+}
+using std::_fi_redirect_printf   ;
+using std::_fi_redirect_vfprintf ;
+using std::_fi_redirect_fprintf  ;
+using std::_fi_redirect_puts     ;
+using std::_fi_redirect_fputs    ;
+using std::_fi_redirect_fputc    ;
+using std::_fi_redirect_fwrite   ;
+#endif
+
 
 // implementation notes:
 //  - microsoft doesn't enable the new preprocessor for C even if you request it. (VS2019 checked)

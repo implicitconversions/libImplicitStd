@@ -2,11 +2,6 @@
 
 #pragma once
 
-// the Microsoft CRT has a define that's been present, unconditionally, since its inception: '_CRT_PACKING'
-// This name is also weird enough to be fairly safe for us to use as a detection clause.
-// Special build requirements can always define PLATFORM_MSW explicitly from your makefile.
-
-
 // Default selection of MSW platform is based on using the Microsoft Compiler.
 // This is not a foolproof assumption, but a special environment can specify these
 // defines explicitly via makefile.
@@ -20,7 +15,9 @@
 #endif
 
 #if !defined(PLATFORM_POSIX)
-#	if __has_include(<unistd.h>)
+#	if PLATFORM_MSW
+#		define PLATFORM_POSIX 0
+#	elif __has_include(<unistd.h>)
 #		define PLATFORM_POSIX 1
 #	else
 #		define PLATFORM_POSIX 0
@@ -52,7 +49,11 @@
 #endif
 
 #if !defined(PLATFORM_PS5)
-#   define PLATFORM_PS5         0
+#   if defined(__PROSPERO__)
+#		define PLATFORM_PS5     1
+#	else
+#   	define PLATFORM_PS5     0
+#	endif
 #endif
 
 #define PLATFORM_SCE (PLATFORM_PS4 || PLATFORM_PS5)

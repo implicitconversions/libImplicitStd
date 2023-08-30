@@ -2,6 +2,8 @@
 #include "posix_dlsym.h"
 #include "icy_assert.h"
 
+#include <dlfcn.h>
+
 #if PLATFORM_POSIX
 
 intptr_t posix_dlopen(const fs::path& origpath, uint32_t RTLD_flags) {
