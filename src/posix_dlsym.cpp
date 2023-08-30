@@ -15,13 +15,13 @@ intptr_t posix_dlopen(const fs::path& origpath, uint32_t RTLD_flags) {
 }
 
 void* posix_dlsym(intptr_t dlhandle, const char* name) {
-	return dlsym(dlhandle, name);
+	return dlsym((void*)dlhandle, name);
 }
 
 void* posix_dlsymreq(intptr_t dlhandle, const char* name) {
 	auto result = dlsym((void*)dlhandle, name);
 	if (!result) {
-		assertR("posix_dlsymreq(dlhandle=%jx, '%s') required symbol not found.", JFMT(dlhandle), name);
+		assertR("posix_dlsymreq(dlhandle=%jx, '%s') required symbol not found."); //, JFMT(dlhandle), name);
 	}
 	return result;
 }

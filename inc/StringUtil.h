@@ -31,6 +31,7 @@
 #endif
 
 #if defined(_MSC_VER) || defined(__MINGW64__)
+#	define HAS_strcasestr   1
 	extern char *_stristr(const char *haystack, const char *needle);
 	inline auto strcasestr  (char const* a, char const* b)              { return _stristr (a,b); }
 	//inline auto strcasecmp  (char const* a, char const* b)              { return _stricmp (a,b); }
@@ -38,7 +39,11 @@
 #endif
 
 #if !defined(HAS_strcasestr)
-#   define HAS_strcasestr   1
+#	if defined(_GNU_SOURCE)
+#	   define HAS_strcasestr   1
+#	else
+#	   define HAS_strcasestr   0
+#	endif
 #endif
 
 #if !HAS_strcasestr
@@ -67,9 +72,9 @@ inline const char *strcasestr(const char *s, const char *find) {
 // These uint8_t variants are convenient for old C++, but will probably fail hard in a world with char8_t.
 // (hopefully at that point we can just ifdef them away or whatever. --jstine)
 
-__always_inline inline auto strcasestr  (uint8_t const* a, uint8_t const* b)              { return strcasestr  ((char const*)a, (char const*)b); }
-__always_inline inline auto strcasecmp  (uint8_t const* a, uint8_t const* b)              { return strcasecmp  ((char const*)a, (char const*)b); }
-__always_inline inline auto strncasecmp (uint8_t const* a, uint8_t const* b, ptrdiff_t c) { return strncasecmp ((char const*)a, (char const*)b,c); }
+__always_inline static auto strcasestr  (uint8_t const* a, uint8_t const* b)              { return strcasestr  ((char const*)a, (char const*)b); }
+__always_inline static auto strcasecmp  (uint8_t const* a, uint8_t const* b)              { return strcasecmp  ((char const*)a, (char const*)b); }
+__always_inline static auto strncasecmp (uint8_t const* a, uint8_t const* b, ptrdiff_t c) { return strncasecmp ((char const*)a, (char const*)b,c); }
 
 // snprintf is usually preferred over other variants:
 //   - snprintf_s has annoying parameter validation and nullifies the buffer instead of truncate.

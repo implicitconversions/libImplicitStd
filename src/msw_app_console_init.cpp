@@ -42,25 +42,7 @@ char const* const g_env_verbose_name      = "VERBOSE";
 char const* const g_env_attach_debugger   = "ATTACH_DEBUG";
 char const* const g_env_wait_debugger     = "WAIT_DEBUG";
 
-// performs a boolean check that doesn't depend on underlying libraries, except as a fallback
-// for considering all possible forms of booelans. (burden is on the developer to use '1' or '0'
-// if they really want this to be the fully safe no-dependencies check).
-bool check_boolean_semi_safe(char const* rvalue, bool defaultNonExist=false) {
-	if (!rvalue || !rvalue[0]) {
-		return defaultNonExist;
-	}
-
-	// fast check for '1' first without invoking our own libraries.
-	if (rvalue[0] == '1' && !rvalue[1]) {
-		return true;
-	}
-	else if (rvalue[0] == '0' && !rvalue[1]) {
-		return false;
-	}
-	else {
-		return StringUtil::getBoolean(rvalue);
-	}
-}
+extern bool check_boolean_semi_safe(char const* rvalue, bool defaultNonExist=false);
 
 // abort message popup is typically skipped when debugger is attached. When not attached its purpose is to
 // allow a debugger to attach, or to allow a user to ignore assertions and "hope for the best".
