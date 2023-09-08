@@ -64,7 +64,7 @@ static FILE* s_pipe_stdin;
 static FILE* s_pipe_stdout;
 static FILE* s_pipe_stderr;
 
-extern "C" void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
+extern "C" void std::_fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
 {
 	FILE** pipedest = nullptr;
 	char const* mode = nullptr;

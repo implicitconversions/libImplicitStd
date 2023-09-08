@@ -185,7 +185,7 @@ namespace StringUtil {
 
 	inline std::string	ReplaceCase(std::string subject, std::string_view search, std::string_view replace) {
 		ptrdiff_t pos;
-		while ((pos = FindFirstCase(subject, search)) != 0) {
+		while ((pos = FindFirstCase(subject, search)) != -1) {
 			subject.replace(pos, search.size(), replace);
 			pos += search.size();
 		}

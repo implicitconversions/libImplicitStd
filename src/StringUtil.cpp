@@ -43,6 +43,10 @@ char *_stristr(const char *haystack, const char *needle)
 }
 #endif
 
+// for easy return of std::string as a const reference. Don't reference this from code that might
+// execute pre-main.
+std::string g_empty_stdstring;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Why strcpy_ajek?
 //
@@ -208,7 +212,7 @@ ptrdiff_t FindFirstCase(std::string_view s, std::string_view find) {
 		++sptr;
 	}
 
-	return {};
+	return -1;
 }
 
 } // namespace StringUtil
