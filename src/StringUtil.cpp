@@ -208,7 +208,7 @@ ptrdiff_t FindFirstCase(std::string_view s, std::string_view find) {
 		++sptr;
 	}
 
-	return {};
+	return -1;
 }
 
 } // namespace StringUtil
