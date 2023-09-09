@@ -38,6 +38,7 @@ _extern_c int      _fi_redirect_puts     (char const* _Buffer);
 _extern_c int      _fi_redirect_fputs    (char const* _Buffer, FILE* _Stream);
 _extern_c int      _fi_redirect_fputc    (int ch, FILE* _Stream);
 _extern_c intmax_t _fi_redirect_fwrite   (void const* src, size_t, size_t, FILE* fp);
+_extern_c void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);	// expects result of GetStdHandle
 #if defined(__cplusplus)
 }
 using std::_fi_redirect_printf   ;
@@ -47,6 +48,7 @@ using std::_fi_redirect_puts     ;
 using std::_fi_redirect_fputs    ;
 using std::_fi_redirect_fputc    ;
 using std::_fi_redirect_fwrite   ;
+using std::_fi_redirect_winconsole_handle;
 #endif
 
 

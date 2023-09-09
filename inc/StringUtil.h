@@ -34,8 +34,11 @@
 #	define HAS_strcasestr   1
 	extern char *_stristr(const char *haystack, const char *needle);
 	inline auto strcasestr  (char const* a, char const* b)              { return _stristr (a,b); }
-	//inline auto strcasecmp  (char const* a, char const* b)              { return _stricmp (a,b); }
-	//inline auto strncasecmp (char const* a, char const* b, ptrdiff_t c) { return _strnicmp(a,b,c); }
+#endif
+
+#if defined(_MSC_VER)
+	inline auto strcasecmp  (char const* a, char const* b)              { return _stricmp (a,b); }
+	inline auto strncasecmp (char const* a, char const* b, ptrdiff_t c) { return _strnicmp(a,b,c); }
 #endif
 
 #if !defined(HAS_strcasestr)

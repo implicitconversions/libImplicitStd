@@ -64,7 +64,7 @@ static FILE* s_pipe_stdin;
 static FILE* s_pipe_stdout;
 static FILE* s_pipe_stderr;
 
-extern "C" void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
+extern "C" void std::_fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
 {
 	FILE** pipedest = nullptr;
 	char const* mode = nullptr;
@@ -127,7 +127,8 @@ extern "C" void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle)
 #if REDEFINE_PRINTF
 
 extern "C" {
-__nodebug int _fi_redirect_printf(const char* fmt, ...)
+
+int std::_fi_redirect_printf(const char* fmt, ...)
 {
 	va_list argptr;
 	va_start(argptr, fmt);
@@ -136,7 +137,7 @@ __nodebug int _fi_redirect_printf(const char* fmt, ...)
 	return result;
 }
 
-__nodebug int _fi_redirect_fprintf(FILE* handle, const char* fmt, ...)
+int std::_fi_redirect_fprintf(FILE* handle, const char* fmt, ...)
 {
 	va_list argptr;
 	va_start(argptr, fmt);
@@ -154,7 +155,7 @@ static FILE* getOriginalPipeHandle(FILE* stdhandle)
 	return nullptr;
 }
 
-int _fi_redirect_vfprintf(FILE* handle, const char* fmt, va_list args)
+int std::_fi_redirect_vfprintf(FILE* handle, const char* fmt, va_list args)
 {
 	int result;
 	if (1) {
@@ -193,13 +194,13 @@ int _fi_redirect_vfprintf(FILE* handle, const char* fmt, va_list args)
 	return result;
 }
 
-int _fi_redirect_puts(char const* buffer) {
+int std::_fi_redirect_puts(char const* buffer) {
 	// since puts appends a newline and OutputDebugString doesn't have a formatted version,
 	// it's easier to just fall back on our printf implementation.
 	return _fi_redirect_printf("%s\n", buffer);
 }
 
-int _fi_redirect_fputs(char const* buffer, FILE* handle) {
+int std::_fi_redirect_fputs(char const* buffer, FILE* handle) {
 	if (handle == stderr) {
 		fflush(stdout);
 	}
@@ -219,7 +220,7 @@ int _fi_redirect_fputs(char const* buffer, FILE* handle) {
 	return result;
 }
 
-int _fi_redirect_fputc(int ch, FILE* handle) {
+int std::_fi_redirect_fputc(int ch, FILE* handle) {
 	// coherency of stdout/stderr on fputc is neigh impossible. So we make no attempt.
 	// (almost nothing uses this anyway)
 
@@ -241,7 +242,7 @@ int _fi_redirect_fputc(int ch, FILE* handle) {
 	return result;
 }
 
-intmax_t _fi_redirect_fwrite(void const* buffer, size_t size, size_t nelem, FILE* handle)
+intmax_t std::_fi_redirect_fwrite(void const* buffer, size_t size, size_t nelem, FILE* handle)
 {
 	auto result = fwrite(buffer, size, nelem, handle);
 
