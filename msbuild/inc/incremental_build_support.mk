@@ -54,30 +54,30 @@ ifeq ($(INCREMENTAL),1)
     endif
 
     # export is required to avoid make mangling the string which contains quotes and parens.
-    export COMPILE.cxx
-    export COMPILE.c
-    export COMPILE.pssl
+    export makeincr_COMPILE_cxx  := $(CXX) $(COMPILE.cxx)
+    export makeincr_COMPILE_c    := $(CC)  $(COMPILE.c)
+    export makeincr_COMPILE_pssl := $(COMPILE.pssl)
 
     m_compile_file.cxx  ?= $(OBJDIR)/cxx.compile_flags
     m_compile_file.c    ?= $(OBJDIR)/c.compile_flags
     m_compile_file.pssl ?= $(OBJDIR)/pssl.compile_flags
 
     ifneq ($(COMPILE.cxx),)
-        m_hash_compile.cxx  = $(shell sha256sum <<< "$$COMPILE.cxx" | cut -c-64)
+        m_hash_compile.cxx  = $(shell sha256sum <<< "$$makeincr_COMPILE_cxx" | cut -c-64)
         ifeq ($(shell cmp -s $(m_compile_file.cxx) <(echo "$(m_hash_compile.cxx)") || echo 1),1)
             null := $(shell rm -f $(m_compile_file.cxx))
         endif
     endif
 
     ifneq ($(COMPILE.c),)
-        m_hash_compile.c    = $(shell sha256sum <<< "$$COMPILE.c" | cut -c-64)
+        m_hash_compile.c    = $(shell sha256sum <<< "$$makeincr_COMPILE_c" | cut -c-64)
         ifeq ($(shell cmp -s $(m_compile_file.c) <(echo "$(m_hash_compile.c)") || echo 1),1)
             null := $(shell rm -f $(m_compile_file.c))
         endif
     endif
 
     ifneq ($(COMPILE.pssl),)
-        m_hash_compile.pssl  = $(shell sha256sum <<< "$$COMPILE.pssl" | cut -c-64)
+        m_hash_compile.pssl  = $(shell sha256sum <<< "$$makeincr_COMPILE_pssl" | cut -c-64)
         ifeq ($(shell cmp -s $(m_compile_file.pssl) <(echo "$(m_hash_compile.pssl)") || echo 1),1)
             null := $(shell rm -f $(m_compile_file.pssl))
         endif
@@ -105,4 +105,4 @@ $(m_compile_file.pssl):
 :   $(call mkobjdir)
 :   @echo $(m_hash_compile.pssl) > $(m_compile_file.pssl)
 
-.RECIPEPREFIX = $(m_old_prefix):
+.RECIPEPREFIX = $(m_old_prefix)
