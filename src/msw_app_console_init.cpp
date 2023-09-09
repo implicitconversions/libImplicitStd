@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <process.h>		// for spawnl/atd
 #include <io.h>
+#include <atomic>
 
 #pragma comment (lib, "dbghelp.lib")
 
