@@ -43,7 +43,17 @@ include $(wildcard $(m_incr_files))
 #     if they don't match, remove the file to triger a rebuild.
 
 ifeq ($(INCREMENTAL),1)
-    # export is reuired to avoid make mangling the string which contains quotes and parens.
+
+    m_link_incr_file  ?= $(OBJDIR)/linker_ldflags
+    ifneq ($(LDFLAGS),)
+        export LDFLAGS
+        m_hash_linker  = $(shell sha256sum <<< "$$LDFLAGS" | cut -c-64)
+        ifeq ($(shell cmp -s $(m_link_incr_file) <(echo "$(m_hash_linker)") || echo 1),1)
+            null := $(shell rm -f $(m_link_incr_file))
+        endif
+    endif
+
+    # export is required to avoid make mangling the string which contains quotes and parens.
     export COMPILE.cxx
     export COMPILE.c
     export COMPILE.pssl
@@ -78,6 +88,10 @@ mkobjdir = @[[ -d '$(@D)' ]] || mkdir -p '$(@D)'
 
 m_old_prefix = $(.RECIPEPREFIX)
 .RECIPEPREFIX = :
+
+$(m_link_incr_file):
+:   $(call mkobjdir)
+:   @echo $(m_hash_linker) > $(m_link_incr_file)
 
 $(m_compile_file.cxx):
 :   $(call mkobjdir)
