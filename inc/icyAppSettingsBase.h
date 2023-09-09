@@ -5,6 +5,7 @@
 //   either exposes the base namespace globally, or wraps it in a desired structured class.
 
 #include "StdStringArg.h"
+#include "StdStringEmpty.h"
 
 #include <string>
 #include <optional>
@@ -46,8 +47,14 @@ public:
 		return _MyBase_::has_value() ? _MyBase_::value().second.c_str() : nullptr;
 	}
 
+	// This function is NOT safe to use pre-main. A rational expectation is that app settings would
+	// have no business being referenced pre-main in any case.
 	std::string const& string() const {
-		return _MyBase_::value().second;
+		if (_MyBase_::has_value())
+			return _MyBase_::value().second;
+		else {
+			return g_empty_stdstring;
+		}
 	}
 };
 MSC_WARNING_DISABLE_POP()

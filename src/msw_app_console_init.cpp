@@ -7,20 +7,19 @@
 #include <cstdio>
 #include <process.h>		// for spawnl/atd
 #include <io.h>
-#include <atomic>
 
 #pragma comment (lib, "dbghelp.lib")
 
 #include "msw_app_console_init.h"
 #include "StringUtil.h"
 #include "EnvironUtil.h"
-#include "MacroUtil.h"
 #include "defer.h"
 
 MASTER_DEBUGGABLE
 
-extern "C" void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);	// expects result of GetStdHandle
-
+#if !defined(ENABLE_ATTACH_TO_DEBUGGER)
+#	define ENABLE_ATTACH_TO_DEBUGGER	(BUILD_CFG_INHOUSE)
+#endif
 
 // CALL_FIRST means call this exception handler first;
 // CALL_LAST means call this exception handler last

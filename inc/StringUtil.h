@@ -34,8 +34,11 @@
 #	define HAS_strcasestr   1
 	extern char *_stristr(const char *haystack, const char *needle);
 	inline auto strcasestr  (char const* a, char const* b)              { return _stristr (a,b); }
-	//inline auto strcasecmp  (char const* a, char const* b)              { return _stricmp (a,b); }
-	//inline auto strncasecmp (char const* a, char const* b, ptrdiff_t c) { return _strnicmp(a,b,c); }
+#endif
+
+#if defined(_MSC_VER)
+	inline auto strcasecmp  (char const* a, char const* b)              { return _stricmp (a,b); }
+	inline auto strncasecmp (char const* a, char const* b, ptrdiff_t c) { return _strnicmp(a,b,c); }
 #endif
 
 #if !defined(HAS_strcasestr)
@@ -182,7 +185,7 @@ namespace StringUtil {
 
 	inline std::string	ReplaceCase(std::string subject, std::string_view search, std::string_view replace) {
 		ptrdiff_t pos;
-		while ((pos = FindFirstCase(subject, search)) != 0) {
+		while ((pos = FindFirstCase(subject, search)) != -1) {
 			subject.replace(pos, search.size(), replace);
 			pos += search.size();
 		}

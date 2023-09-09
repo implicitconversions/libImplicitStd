@@ -24,8 +24,7 @@ static inline auto JFMT(const uint16_t& scalar) { return uintmax_t(scalar); }
 static inline auto JFMT(const uint32_t& scalar) { return uintmax_t(scalar); }
 static inline auto JFMT(const uint64_t& scalar) { return uintmax_t(scalar); }
 
-// clang seems to really want this particular overload, but msvc and gcc detest it.
-#if defined(__MINGW64__) && defined(__GNUC__)
+#if defined(_MSC_VER) || (defined(__MINGW64__) && defined(__GNUC__))
 static inline auto JFMT(const unsigned long& scalar) { return uintmax_t(scalar); }
 #endif
 
@@ -42,10 +41,10 @@ struct StringViewTempArg;
 // Custom string to integer conversions: sj for intmax_t, uj for uintmax_t. Recommendation is to
 // always use these in splace of strtol / strtoll and then truncate or saturate to intended target
 // value.
-// 
+//
 // Supports binary notation (0b and 0B) and also C++14 literal separators:
 //     0b1111'1011'0001
-// 
+//
 // Supports implicit conversion from std::string and std::string_view (must include StdStringArg.h).
 //
 // Sets errno = ERANGE on truncated 64-bit input value and returns UINTMAX_MAX / INTMAX_MAX / INTMAX_MIN.
