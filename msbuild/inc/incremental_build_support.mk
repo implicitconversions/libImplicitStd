@@ -14,8 +14,10 @@
 #       $(CXX) -c $< all the stuff ...
 #       $(call incr_touch_depfile)
 
-m_mydir := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-export PATH := $(abspath $(m_mydir)):$(PATH)
+m_mydir := $(dir $(realpath -m $(lastword $(MAKEFILE_LIST))))
+
+# only works on make 4.4 or newer.
+#export PATH := $(abspath $(m_mydir)):$(PATH)
 
 # enable incremental builds (checks header dependencies)
 # incr=1 is provided as a familiar shorthand on the make CLI.
@@ -61,9 +63,9 @@ ifeq ($(INCREMENTAL),1)
     endif
 
     export tmp_makeincr_COMPILE  := $($(3)) $$($$(m_local_subvar)COMPILE.$(3))
-    m_local_objdir  := $$(shell realpath -m --relative-to=$$$$(PWD) $$(OBJDIR)/$$(m_local_subdir))
+    m_local_objdir  := $$(shell realpath -m --relative-to=$$$$(pwd) $$(OBJDIR)/$$(m_local_subdir))
     m_compile_file  := $$(m_local_objdir)/compile_flags.$(3)
-    null := $$(shell incremental_update_compile_flags.sh $$(m_compile_file))
+    null := $$(shell $$(m_mydir)/incremental_update_compile_flags.sh $$(m_compile_file))
     ifeq ($(3),LD)
         $$(m_local_subvar)INCREMENTAL_DEPS.$(3) := $$(m_compile_file)
     else
