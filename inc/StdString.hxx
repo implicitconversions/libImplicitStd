@@ -25,10 +25,10 @@ void AppendFmtV(StdStrT& result, const StringConversionMagick& fmt, va_list list
 
 	auto curlen = result.length();
 	result.resize(destSize+curlen);
-    #if PLATFORM_LINUX
-    vsnprintf
-    #else
+    #if defined(_MSC_VER)
 	vsprintf_s
+    #else
+    vsnprintf
     #endif
     (const_cast<char*>(result.data() + curlen), destSize+1, fmt.c_str(), list );
 }
