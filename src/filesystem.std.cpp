@@ -61,9 +61,14 @@ bool exists(const path& fspath) {
 	return ret && !nothrow_please_kthx;
 }
 
-void remove(const path& fspath) {
+bool remove(const path& fspath) {
 	std::error_code nothrow_please_kthx;
-	std::filesystem::remove(fspath.asLibcStr(), nothrow_please_kthx);
+	return std::filesystem::remove(fspath.asLibcStr(), nothrow_please_kthx);
+}
+
+bool remove_all(const path& fspath) {
+	std::error_code nothrow_please_kthx;
+	return std::filesystem::remove_all(fspath.asLibcStr(), nothrow_please_kthx);
 }
 
 intmax_t file_size(const path& fspath) {
