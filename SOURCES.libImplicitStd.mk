@@ -2,9 +2,7 @@ SOURCES_libImplicitStd :=
 SOURCES_libImplicitStd += src/UnattendedMode.cpp
 SOURCES_libImplicitStd += src/AppSettings.cpp
 SOURCES_libImplicitStd += src/ConfigParse.cpp
-SOURCES_libImplicitStd += src/filesystem.std.cpp
 SOURCES_libImplicitStd += src/fs.cpp
-SOURCES_libImplicitStd += src/posix_file.cpp
 SOURCES_libImplicitStd += src/standardfilesystem.cpp
 SOURCES_libImplicitStd += src/StringBuilder.cpp
 SOURCES_libImplicitStd += src/StringUtil.cpp
@@ -17,6 +15,16 @@ ifeq ($(platform),msw)
     SOURCES_libImplicitStd += src/msw-printf-stdout.cpp
 endif
 
-ifeq ($(HAS_DLSYM),1)
-    SOURCES_libImplicitStd += src/posix_dlsym.cpp
+ifeq ($(m_platform_sce),1)
+    SOURCES_libImplicitStd += ../libimplicitstd-sce/src/filesystemSce.cpp
+    SOURCES_libImplicitStd += ../libimplicitstd-sce/src/SceErrorCode.cpp
+    ifeq ($(HAS_DLSYM),1)
+        SOURCES_libImplicitStd += ../libimplicitstd-sce/src/sce_posix_dlsym.cpp
+    endif
+else
+    SOURCES_libImplicitStd += src/filesystem.std.cpp
+    SOURCES_libImplicitStd += src/posix_file.cpp
+    ifeq ($(HAS_DLSYM),1)
+        SOURCES_libImplicitStd += src/posix_dlsym.cpp
+    endif
 endif
