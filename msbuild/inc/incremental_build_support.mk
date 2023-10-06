@@ -29,7 +29,7 @@ ifeq ($(INCREMENTAL),1)
     incr_touch_depfile = @touch --reference=$@ $(basename $@).d || :
 
     g_incr_flags   = -MT $@ -MD -MP -MF $(basename $@).d
-    m_incr_files   = $(OBJECTS:%.o=%.d)
+    m_incr_files   = $(addsuffix .d,$(basename $(OBJECTS)))
 endif
 
 # Dependency/Incremental Build Rules. These are only effective if INCREMENTAL=1.
