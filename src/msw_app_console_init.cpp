@@ -309,7 +309,7 @@ static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 	char const* excname = nullptr;
 	switch (eps->ExceptionRecord->ExceptionCode) {
 		case EXCEPTION_ACCESS_VIOLATION	   : excname = "SIGSEGV";					break;
-		case EXCEPTION_BREAKPOINT		   : excname = "Breakpoint";				break;
+		case EXCEPTION_BREAKPOINT		   : excname = "Break/Stop Instruction";	break;
 		case EXCEPTION_PRIV_INSTRUCTION	   : excname = "Privileged Instruction";	break;
 		case EXCEPTION_ILLEGAL_INSTRUCTION : excname = "Illegal Instruction";		break;
 		case EXCEPTION_STACK_OVERFLOW      : excname = "Stack Overflow";			break;
