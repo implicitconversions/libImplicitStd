@@ -57,16 +57,13 @@ bool appHasSetting(const std::string& name) {
 }
 
 // returns 'exists' and 'value'
-StdOptionString<bool> _getSettingBool(std::map<std::string, std::string> const& map, const std::string& name) {
-	auto it = map.find(name);
-	if (it == map.end()) return {};
-
+StdOptionString<bool> _getSettingValueBool(const std::string& name, const std::string& rvalue) {
 	// switch which is present but has no assgned value is assumed 1.
 	// in this way --do-a-thing will be interpreted as --do-a-thing=1
 	// All switches should be designed to adhere to this pattern.
 
 	bool result = 1;
-	if (auto rvalue = it->second; !rvalue.empty()) {
+	if (!rvalue.empty()) {
 		bool parse_error;
 		result = StringUtil::getBoolean(rvalue, &parse_error);
 		if (parse_error) {
@@ -75,7 +72,15 @@ StdOptionString<bool> _getSettingBool(std::map<std::string, std::string> const& 
 			return {};
 		}
 	}
-	return std::pair { result, name };
+	return std::pair { result, rvalue };
+}
+
+// returns 'exists' and 'value'
+StdOptionString<bool> _getSettingBool(std::map<std::string, std::string> const& map, const std::string& name) {
+	auto it = map.find(name);
+	if (it == map.end()) return {};
+
+	return _getSettingValueBool(name, it->second);
 }
 
 bool appGetSettingBool(const std::string& name, bool nonexist_result) {
@@ -120,7 +125,7 @@ bool appSettingDeprecationCheck(std::string const& name, std::string const& depr
 }
 
 StdOptionString<bool> _template_impl::ConvertToBool(std::string const& rval) {
-	return _getSettingBool(g_map, rval);
+	return _getSettingValueBool("", rval);
 }
 
 StdOptionString<double> _template_impl::ConvertFromString_f64(std::string const& rval) {
