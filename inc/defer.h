@@ -35,25 +35,27 @@ public:
 	}
 };
 
-#define _defer_expand_lineno_2(func, lineno) \
-	auto anon_defer_lambda_ ## lineno = [&]() { func; }; \
+#define _defer_expand_lineno_2(lineno, ...) \
+	auto anon_defer_lambda_ ## lineno = [&]() { __VA_ARGS__; }; \
 	auto anon_defer_        ## lineno = _impl_anon_defer_t { anon_defer_lambda_ ## lineno }
 
-#define _deferFunc_expand_lineno_2(func, lineno) \
+#define _deferFunc_expand_lineno_2(lineno, func) \
 	auto anon_defer_        ## lineno = _impl_anon_defer_t { func }
 
-#define _defer_expand_lineno_1(func, lineno) _defer_expand_lineno_2(func, lineno)
-#define _deferFunc_expand_lineno_1(func, lineno) _deferFunc_expand_lineno_2(func, lineno)
+#define _defer_expand_lineno_1(lineno, ...) _defer_expand_lineno_2(lineno, __VA_ARGS__)
+#define _deferFunc_expand_lineno_1(lineno, func) _deferFunc_expand_lineno_2(lineno, func)
 
 
 // defers a statement until the end of the current lexical scope. The parameter given must
 // be a valid statement. Variables or pointers to functions are not permissible.
-#define Defer(function_content)   _defer_expand_lineno_1(function_content, __LINE__)
+#define defer(...)   _defer_expand_lineno_1(__LINE__, __VA_ARGS__)
 
 // defers a function invocation or lambda. The function signature must be no args, eg. func().
 // intended use case is when an anonymous lambda defined by macro is too much of a pita to debug.
-#define DeferFunc(func) _deferFunc_expand_lineno_1(func, __LINE__)
+#define deferFunc(func) _deferFunc_expand_lineno_1(__LINE__, func)
 
+#define Defer(...) defer(__VA_ARGS__)		// deprecated, prefer 'defer'
+#define DeferFunc(func) deferFunc(func)		// deprecated, prefer 'deferFunc'
 
 // helpful for showing intent when using defer as a lightweight local-scope pointer manager.
 template<typename T>
