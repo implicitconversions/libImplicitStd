@@ -17,14 +17,14 @@ std::tuple<void const*,intmax_t> msw_GetResourceInfo(std::string resource_name)
     if (!res)
         return {};
 
-    res_handle = LoadResource(NULL, res);
+    res_handle = LoadResource(hModule, res);
     if (!res_handle)
         return {};
 
 	// LocResource doesn't actually lock anything - it's just a legacy API from Win95 era.
     return {
 		LockResource(res_handle),
-	    (intmax_t)SizeofResource(NULL, res)
+	    (intmax_t)SizeofResource(hModule, res)
 	};
 }
 #endif
