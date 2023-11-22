@@ -3,6 +3,7 @@
 #include "icyAppSettingsMap.h"
 #include "StringUtil.h"
 #include "icy_log.h"
+#include "icy_assert.h"
 
 #include <limits>
 
