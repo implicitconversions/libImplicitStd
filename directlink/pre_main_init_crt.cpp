@@ -1,4 +1,4 @@
-// Pre-Main Initialization Setip for Microsoft CRT
+// Pre-Main Initialization Setup for Microsoft CRT
 //
 // This file must be manually included into EVERY PROJECT that intends to use the msw_app_console_init system.
 // Failure to add this file to the project which generates the executable will result in misbehavior of abort
