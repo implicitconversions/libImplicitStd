@@ -4,6 +4,7 @@
 #include "fs.h"
 
 intptr_t posix_dlopen(const fs::path& origpath, uint32_t RTLD_flags);
+bool	 posix_dlclose(intptr_t dlhandle);
 void*    posix_dlsym   (intptr_t dlhandle, char const* name);
 void*	 posix_dlsymreq(intptr_t dlhandle, char const* name);
 
