@@ -191,6 +191,11 @@ namespace StringUtil {
 		}
 		return subject;
 	}
+
+	std::string LineNumberString(const char* str);
+	inline std::string LineNumberString(const std::string_view& str) {
+		return LineNumberString(str.data());
+	}
 }
 
 extern int strcpy_ajek(char* dest, int destlen, const char* src);

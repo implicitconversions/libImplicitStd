@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdarg>
 #include <charconv>
+#include <iomanip>
 #include <limits>
 #include <optional>
 
@@ -546,3 +547,15 @@ template<> std::optional< int8_t > StringUtil::Parse(std::string const& rval) { 
 template<> std::optional<float>    StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_f32(rval); }
 template<> std::optional<double>   StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_f64(rval); }
 
+std::string StringUtil::LineNumberString(const char* str) {
+	std::stringstream input(str);
+	std::stringstream output;
+	std::string line;
+
+	int lineNumber = 1;
+	while (std::getline(input, line)) {
+		output << std::setw(4) << lineNumber++ << ":  " << line << std::endl;
+	}
+
+	return output.str();
+}
