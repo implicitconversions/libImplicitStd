@@ -100,16 +100,15 @@ StdOptionString<ptrdiff_t> appGetSettingMemorySize(const std::string& name, ptrd
 	char *endptr = nullptr;
 	const char* valstr = rval.c_str();
 	auto value = strtod(valstr, &endptr);
-	if (value <= 0 || endptr == valstr) {
+	if (value < 0 || endptr == valstr) {
 		fprintf(stderr, "Config error: expected size argument when parsing %s=%s [ex: 30.5mib, 3000kib, 1280000 (bytes)]\n", name.c_str(), rval.c_str());
 		errno = EINVAL;
 	}
-	elif (auto scalar = CvtNumericalPostfixToScalar(endptr); scalar >= 0) {
+	if (auto scalar = CvtNumericalPostfixToScalar(endptr); scalar >= 0) {
 		result.first = value * scalar, rval;
 	}
 	else {
-		fprintf(stderr, "Expected size postfix when parsing %s=%s [ex: kb,kib,mb,mib]\n", name.c_str(), rval.c_str());
-		errno = EINVAL;
+		result.first = value;
 	}
 	return result;
 }
