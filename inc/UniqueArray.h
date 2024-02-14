@@ -196,10 +196,12 @@ public:
 	}
 };
 
-// A wrapper around unique_ptr of fixed-sized arrays of trivially default constructable objects.
+// A heap-allocated fixed-sized array of trivially default constructable objects. Uses unique_ptr
+// internally to manage the array allocation. Can also think of this as a fixed-size array for
+// situations where the size isn't known at compile time.
+//
 // Intended for use in place of std::vector, where the size is fixed and zero-fill initialization
 // isn't desirable (which is usually always the case for any fixed pre-sized array situation).
-// Can also think of this as a fixed-size array for situations where the size isn't known at compile time.
 template<typename T>
 struct UniqueArray {
 	std::unique_ptr<T[]> m_data;

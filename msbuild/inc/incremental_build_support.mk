@@ -1,14 +1,10 @@
 # incremental-build-support.mk
 #
-# Required Input Definitions:
-#   OBJDIR  - dir in which objects and intermediate build items are stored.
-#   OBJECTS - the complete list of object files needed to build the primary target.
-#   COMPILE.cxx
-#   COMPILE.c
+# Input Requirements
+#   OBJECTS - must be fully defined prior to inclusion, to allow for correct rules definitions.
 #
 # Output Definitions:
 #   g_incr_flags - pass this into the compiler!
-#   g_incr_prereqs - this is a dependency for the compiler recipe
 #
 # Notes when Authoring Rules/Recipes:
 #  * sub-makes must be forced when building incrementally, since only the submake knows its dependencies.
@@ -18,77 +14,72 @@
 #       $(CXX) -c $< all the stuff ...
 #       $(call incr_touch_depfile)
 
+m_mydir := $(dir $(realpath -m $(lastword $(MAKEFILE_LIST))))
+
+# only works on make 4.4 or newer.
+#export PATH := $(abspath $(m_mydir)):$(PATH)
+
 # enable incremental builds (checks header dependencies)
 # incr=1 is provided as a familiar shorthand on the make CLI.
 incr ?= 1
 INCREMENTAL ?= $(incr)
 
-# TODO: this might only be needed on MSYS2, maybe try NOP'ing it on linux later...
-incr_touch_depfile = @(( $(INCREMENTAL) )) && touch --reference=$@ $(OBJDIR)/$*.d || :
-
 ifeq ($(INCREMENTAL),1)
-    g_incr_flags   = -MT $@ -MD -MP -MF $(OBJDIR)/$*.d
-    g_incr_prereqs = $(OBJDIR)/%.d
-    m_incr_files   = $(OBJECTS:%.o=%.d)
+    # TODO: this might only be needed on MSYS2, maybe try NOP'ing it on linux later...
+    incr_touch_depfile = @touch --reference=$@ $(basename $@).d || :
+
+    g_incr_flags   = -MT $@ -MD -MP -MF $(basename $@).d
+    m_incr_files   = $(addsuffix .d,$(basename $(OBJECTS)))
 endif
 
-# Dependency/Incremental Build Rules. These are olny effective if INCREMENTAL=1.
+# Dependency/Incremental Build Rules. These are only effective if INCREMENTAL=1.
+ifeq ($(INCREMENTAL),1)
+ifeq ($(m_incremental_objects_rule_is_defined),)
+m_incremental_objects_rule_is_defined := 1
 $(m_incr_files):
 include $(wildcard $(m_incr_files))
+endif
+endif
 
-### Dependency Recompiler based on compiler options ###
-
+# Args :
+#   1 - variable name prefix, usually empty or "my_lib_name"
+#   2 - library subdir location, can leave empty if same as variable name prefix
+#   3 - Compiler command (CC, CXX, LD, etc)
+# What it does:
 #  1. create a hash of the collection of switches used to compile this rule
 #  2. compare contents of existing file with what our current compiler options represent.
 #     if they don't match, remove the file to triger a rebuild.
-
+#  3. Generate a rule to match all object files in the subdir to the specified extension.
 ifeq ($(INCREMENTAL),1)
-    # export is reuired to avoid make mangling the string which contains quotes and parens.
-    export COMPILE.cxx
-    export COMPILE.c
-    export COMPILE.pssl
+    define INCR_BUILD_MACRO
 
-    m_compile_file.cxx  ?= $(OBJDIR)/cxx.compile_flags
-    m_compile_file.c    ?= $(OBJDIR)/c.compile_flags
-    m_compile_file.pssl ?= $(OBJDIR)/pssl.compile_flags
-
-    ifneq ($(COMPILE.cxx),)
-        m_hash_compile.cxx  = $(shell sha256sum <<< "$$COMPILE.cxx" | cut -c-64)
-        ifeq ($(shell cmp -s $(m_compile_file.cxx) <(echo "$(m_hash_compile.cxx)") || echo 1),1)
-            null := $(shell rm -f $(m_compile_file.cxx))
-        endif
+    m_local_subvar := $(1).
+    ifeq ($(1),.)
+        m_local_subvar := 
     endif
 
-    ifneq ($(COMPILE.c),)
-        m_hash_compile.c    = $(shell sha256sum <<< "$$COMPILE.c" | cut -c-64)
-        ifeq ($(shell cmp -s $(m_compile_file.c) <(echo "$(m_hash_compile.c)") || echo 1),1)
-            null := $(shell rm -f $(m_compile_file.c))
-        endif
+    ifeq ($(2),)
+        m_local_subdir := $(1)
     endif
 
-    ifneq ($(COMPILE.pssl),)
-        m_hash_compile.pssl  = $(shell sha256sum <<< "$$COMPILE.pssl" | cut -c-64)
-        ifeq ($(shell cmp -s $(m_compile_file.pssl) <(echo "$(m_hash_compile.pssl)") || echo 1),1)
-            null := $(shell rm -f $(m_compile_file.pssl))
-        endif
+    export tmp_makeincr_COMPILE  := $($(3)) $$($$(m_local_subvar)COMPILE.$(3))
+    m_local_objdir  := $$(shell realpath -m --relative-to=$$$$(pwd) $$(OBJDIR)/$$(m_local_subdir))
+    m_compile_file  := $$(m_local_objdir)/compile_flags.$(3)
+    null := $$(shell $$(m_mydir)/incremental_update_compile_flags.sh $$(m_compile_file))
+    ifeq ($(3),LD)
+        $$(m_local_subvar)INCREMENTAL_DEPS.$(3) := $$(m_compile_file)
+    else
+        $$(m_local_subvar)INCREMENTAL_DEPS.$(3) := $$(m_compile_file) $$(m_local_objdir)/%.d
     endif
+    endef
 endif
 
-mkobjdir = @[[ -d '$(@D)' ]] || mkdir -p '$(@D)'
 
-m_old_prefix = $(.RECIPEPREFIX)
-.RECIPEPREFIX = :
-
-$(m_compile_file.cxx):
-:   $(call mkobjdir)
-:   @echo $(m_hash_compile.cxx) > $(m_compile_file.cxx)
-
-$(m_compile_file.c):
-:   $(call mkobjdir)
-:   @echo $(m_hash_compile.c) > $(m_compile_file.c)
-
-$(m_compile_file.pssl):
-:   $(call mkobjdir)
-:   @echo $(m_hash_compile.pssl) > $(m_compile_file.pssl)
-
-.RECIPEPREFIX = $(m_old_prefix):
+#m_link_incr_file  := $(OBJDIR)/linker_ldflags
+#ifneq ($(LDFLAGS),)
+#    export LDFLAGS
+#    m_hash_linker  = $(shell sha256sum <<< "$$LDFLAGS" | cut -c-64)
+#    ifeq ($(shell cmp -s $(m_link_incr_file) <(echo "$(m_hash_linker)") || echo 1),1)
+#        null := $(shell rm -f $(m_link_incr_file))
+#    endif
+#endif

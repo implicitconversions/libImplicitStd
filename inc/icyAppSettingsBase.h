@@ -5,6 +5,7 @@
 //   either exposes the base namespace globally, or wraps it in a desired structured class.
 
 #include "StdStringArg.h"
+#include "StdStringEmpty.h"
 
 #include <string>
 #include <optional>
@@ -46,8 +47,12 @@ public:
 		return _MyBase_::has_value() ? _MyBase_::value().second.c_str() : nullptr;
 	}
 
-	std::string const& string() const {
-		return _MyBase_::value().second;
+	std::string string() const {
+		if (_MyBase_::has_value())
+			return _MyBase_::value().second;
+		else {
+			return {};
+		}
 	}
 };
 MSC_WARNING_DISABLE_POP()
@@ -70,10 +75,10 @@ namespace icyAppSettingsIfc
 	extern std::tuple<std::string, bool> appGetSettingTuple(const std::string& name);
 	extern bool appSettingDeprecationCheck(std::string const& name, std::string const& deprecated_alias);
 
-	template<typename T> 
+	template<typename T>
 	StdOptionString<T> ConvertFromString(std::string const& rval);
 
-	template<typename T> 
+	template<typename T>
 	StdOptionString<T> appGetSettingOpt(StdStringTempArg name) {
 		auto rval = appGetSetting(name);
 		if (rval.empty()) {

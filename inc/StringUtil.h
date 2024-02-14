@@ -34,8 +34,11 @@
 #	define HAS_strcasestr   1
 	extern char *_stristr(const char *haystack, const char *needle);
 	inline auto strcasestr  (char const* a, char const* b)              { return _stristr (a,b); }
-	//inline auto strcasecmp  (char const* a, char const* b)              { return _stricmp (a,b); }
-	//inline auto strncasecmp (char const* a, char const* b, ptrdiff_t c) { return _strnicmp(a,b,c); }
+#endif
+
+#if defined(_MSC_VER)
+	inline auto strcasecmp  (char const* a, char const* b)              { return _stricmp (a,b); }
+	inline auto strncasecmp (char const* a, char const* b, ptrdiff_t c) { return _strnicmp(a,b,c); }
 #endif
 
 #if !defined(HAS_strcasestr)
@@ -72,9 +75,9 @@ inline const char *strcasestr(const char *s, const char *find) {
 // These uint8_t variants are convenient for old C++, but will probably fail hard in a world with char8_t.
 // (hopefully at that point we can just ifdef them away or whatever. --jstine)
 
-__always_inline static auto strcasestr  (uint8_t const* a, uint8_t const* b)              { return strcasestr  ((char const*)a, (char const*)b); }
-__always_inline static auto strcasecmp  (uint8_t const* a, uint8_t const* b)              { return strcasecmp  ((char const*)a, (char const*)b); }
-__always_inline static auto strncasecmp (uint8_t const* a, uint8_t const* b, ptrdiff_t c) { return strncasecmp ((char const*)a, (char const*)b,c); }
+inline auto strcasestr  (uint8_t const* a, uint8_t const* b)              { return strcasestr  ((char const*)a, (char const*)b); }
+inline auto strcasecmp  (uint8_t const* a, uint8_t const* b)              { return strcasecmp  ((char const*)a, (char const*)b); }
+inline auto strncasecmp (uint8_t const* a, uint8_t const* b, ptrdiff_t c) { return strncasecmp ((char const*)a, (char const*)b,c); }
 
 // snprintf is usually preferred over other variants:
 //   - snprintf_s has annoying parameter validation and nullifies the buffer instead of truncate.
@@ -182,11 +185,16 @@ namespace StringUtil {
 
 	inline std::string	ReplaceCase(std::string subject, std::string_view search, std::string_view replace) {
 		ptrdiff_t pos;
-		while ((pos = FindFirstCase(subject, search)) != 0) {
+		while ((pos = FindFirstCase(subject, search)) != -1) {
 			subject.replace(pos, search.size(), replace);
 			pos += search.size();
 		}
 		return subject;
+	}
+
+	std::string LineNumberString(const char* str);
+	inline std::string LineNumberString(const std::string_view& str) {
+		return LineNumberString(str.data());
 	}
 }
 

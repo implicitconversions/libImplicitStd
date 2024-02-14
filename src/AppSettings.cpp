@@ -3,6 +3,7 @@
 #include "icyAppSettingsMap.h"
 #include "StringUtil.h"
 #include "icy_log.h"
+#include "icy_assert.h"
 
 #include <limits>
 
@@ -57,16 +58,13 @@ bool appHasSetting(const std::string& name) {
 }
 
 // returns 'exists' and 'value'
-StdOptionString<bool> _getSettingBool(std::map<std::string, std::string> const& map, const std::string& name) {
-	auto it = map.find(name);
-	if (it == map.end()) return {};
-
+StdOptionString<bool> _getSettingValueBool(const std::string& name, const std::string& rvalue) {
 	// switch which is present but has no assgned value is assumed 1.
 	// in this way --do-a-thing will be interpreted as --do-a-thing=1
 	// All switches should be designed to adhere to this pattern.
 
 	bool result = 1;
-	if (auto rvalue = it->second; !rvalue.empty()) {
+	if (!rvalue.empty()) {
 		bool parse_error;
 		result = StringUtil::getBoolean(rvalue, &parse_error);
 		if (parse_error) {
@@ -75,7 +73,15 @@ StdOptionString<bool> _getSettingBool(std::map<std::string, std::string> const& 
 			return {};
 		}
 	}
-	return std::pair { result, name };
+	return std::pair { result, rvalue };
+}
+
+// returns 'exists' and 'value'
+StdOptionString<bool> _getSettingBool(std::map<std::string, std::string> const& map, const std::string& name) {
+	auto it = map.find(name);
+	if (it == map.end()) return {};
+
+	return _getSettingValueBool(name, it->second);
 }
 
 bool appGetSettingBool(const std::string& name, bool nonexist_result) {
@@ -94,16 +100,15 @@ StdOptionString<ptrdiff_t> appGetSettingMemorySize(const std::string& name, ptrd
 	char *endptr = nullptr;
 	const char* valstr = rval.c_str();
 	auto value = strtod(valstr, &endptr);
-	if (value <= 0 || endptr == valstr) {
+	if (value < 0 || endptr == valstr) {
 		fprintf(stderr, "Config error: expected size argument when parsing %s=%s [ex: 30.5mib, 3000kib, 1280000 (bytes)]\n", name.c_str(), rval.c_str());
 		errno = EINVAL;
 	}
-	elif (auto scalar = CvtNumericalPostfixToScalar(endptr); scalar >= 0) {
+	if (auto scalar = CvtNumericalPostfixToScalar(endptr); scalar >= 0) {
 		result.first = value * scalar, rval;
 	}
 	else {
-		fprintf(stderr, "Expected size postfix when parsing %s=%s [ex: kb,kib,mb,mib]\n", name.c_str(), rval.c_str());
-		errno = EINVAL;
+		result.first = value;
 	}
 	return result;
 }
@@ -120,7 +125,7 @@ bool appSettingDeprecationCheck(std::string const& name, std::string const& depr
 }
 
 StdOptionString<bool> _template_impl::ConvertToBool(std::string const& rval) {
-	return _getSettingBool(g_map, rval);
+	return _getSettingValueBool("", rval);
 }
 
 StdOptionString<double> _template_impl::ConvertFromString_f64(std::string const& rval) {

@@ -14,20 +14,23 @@
 // doing the same for ints. If I want optimized codepaths, I'm not using va-args anyway. So let's
 // just pick a size and make all parameters match it already. --jstine
 
-static inline auto JFMT(const int8_t &  scalar) { return intmax_t(scalar); }
-static inline auto JFMT(const int16_t&  scalar) { return intmax_t(scalar); }
-static inline auto JFMT(const int32_t&  scalar) { return intmax_t(scalar); }
-static inline auto JFMT(const int64_t&  scalar) { return intmax_t(scalar); }
+template<typename T>
+auto JFMT(T const& scalar) {
+	static_assert(sizeof(T) <= sizeof(intmax_t));
 
-static inline auto JFMT(const uint8_t & scalar) { return uintmax_t(scalar); }
-static inline auto JFMT(const uint16_t& scalar) { return uintmax_t(scalar); }
-static inline auto JFMT(const uint32_t& scalar) { return uintmax_t(scalar); }
-static inline auto JFMT(const uint64_t& scalar) { return uintmax_t(scalar); }
-
-// clang seems to really want this particular overload, but msvc and gcc detest it.
-#if defined(__MINGW64__) && defined(__GNUC__)
-static inline auto JFMT(const unsigned long& scalar) { return uintmax_t(scalar); }
-#endif
+	if constexpr (std::is_enum_v<T>){
+		return JFMT((typename std::underlying_type<T>::type)scalar);
+	}
+	else if constexpr (std::is_signed_v<T>) {
+		//static_assert(std::is_convertible_v<T, intmax_t>);
+		intmax_t result = scalar;
+		return result;
+	}
+	else {
+		uintmax_t result = scalar;
+		return result;
+	}
+}
 
 static inline int32_t  FMT64HI(int64_t  src) { return src >> 32; }
 static inline uint32_t FMT64LO(int64_t  src) { return src & ((1ULL<<32)-1); }
@@ -42,10 +45,10 @@ struct StringViewTempArg;
 // Custom string to integer conversions: sj for intmax_t, uj for uintmax_t. Recommendation is to
 // always use these in splace of strtol / strtoll and then truncate or saturate to intended target
 // value.
-// 
+//
 // Supports binary notation (0b and 0B) and also C++14 literal separators:
 //     0b1111'1011'0001
-// 
+//
 // Supports implicit conversion from std::string and std::string_view (must include StdStringArg.h).
 //
 // Sets errno = ERANGE on truncated 64-bit input value and returns UINTMAX_MAX / INTMAX_MAX / INTMAX_MIN.

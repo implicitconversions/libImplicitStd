@@ -14,13 +14,13 @@
 #include "msw_app_console_init.h"
 #include "StringUtil.h"
 #include "EnvironUtil.h"
-#include "MacroUtil.h"
 #include "defer.h"
 
 MASTER_DEBUGGABLE
 
-extern "C" void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);	// expects result of GetStdHandle
-
+#if !defined(ENABLE_ATTACH_TO_DEBUGGER)
+#	define ENABLE_ATTACH_TO_DEBUGGER	(BUILD_CFG_INHOUSE)
+#endif
 
 // CALL_FIRST means call this exception handler first;
 // CALL_LAST means call this exception handler last
@@ -309,7 +309,7 @@ static LONG NTAPI msw_PageFaultExceptionFilter( EXCEPTION_POINTERS* eps )
 	char const* excname = nullptr;
 	switch (eps->ExceptionRecord->ExceptionCode) {
 		case EXCEPTION_ACCESS_VIOLATION	   : excname = "SIGSEGV";					break;
-		case EXCEPTION_BREAKPOINT		   : excname = "Breakpoint";				break;
+		case EXCEPTION_BREAKPOINT		   : excname = "Break/Stop Instruction";	break;
 		case EXCEPTION_PRIV_INSTRUCTION	   : excname = "Privileged Instruction";	break;
 		case EXCEPTION_ILLEGAL_INSTRUCTION : excname = "Illegal Instruction";		break;
 		case EXCEPTION_STACK_OVERFLOW      : excname = "Stack Overflow";			break;

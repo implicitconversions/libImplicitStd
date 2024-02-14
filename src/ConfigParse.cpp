@@ -112,6 +112,10 @@ extern char const* ConfigParseSingleArg(char const* input, char const *lvalue, i
 }
 
 void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFunc& push_item) {
+	return ConfigParseArgs(argc, argv, "--", push_item);
+}
+
+void ConfigParseArgs(int argc, const char* const argv[], char const* prefix, const ConfigParseAddFunc& push_item) {
 	// Do not strip quotes when parsing arguments -- the commandline processor (cmd/bash)
 	// will have done that for us already.  Any quotes in the command line are intentional
 	// and would have been provided by the user by way of escaped quotes. --jstine
@@ -122,9 +126,9 @@ void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFun
 	for (int i=0; i<argc; ++i) {
 		const char* arg = argv[i];
 		if (!arg[0]) continue;
-		if (!StringUtil::BeginsWith(arg, "--")) {
+		if (prefix && prefix[0] && !StringUtil::BeginsWith(arg, prefix)) {
 			// do not trim any whitespace, this is a positional parameter (not an argument or switch)
-			push_item(arg, {});
+			push_item({}, arg);
 			continue;
 		}
 
@@ -140,8 +144,13 @@ void ConfigParseArgs(int argc, const char* const argv[], const ConfigParseAddFun
 		}
 		else {
 			// allow support for space-delimited parameter assignment.
-			if ((i+1 < argc) && !StringUtil::BeginsWith(argv[i+1], "--")) {
+			// valid only if the prefix is non-null.
+			if ((i+1 < argc) && (prefix && prefix[0] && !StringUtil::BeginsWith(argv[i+1], prefix))) {
 				rvalue = argv[i+1];
+			}
+			else {
+			// no assignment operator? treat this as a positional parameter (not an argument or switch)
+				push_item({}, arg);
 			}
 		}
 
