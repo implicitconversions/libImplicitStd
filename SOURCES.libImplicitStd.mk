@@ -15,16 +15,10 @@ ifeq ($(platform),msw)
     SOURCES_libImplicitStd += src/msw-printf-stdout.cpp
 endif
 
-ifeq ($(m_platform_sce),1)
-    SOURCES_libImplicitStd += ../libimplicitstd-sce/src/filesystemSce.cpp
-    SOURCES_libImplicitStd += ../libimplicitstd-sce/src/SceErrorCode.cpp
-    ifeq ($(HAS_DLSYM),1)
-        SOURCES_libImplicitStd += ../libimplicitstd-sce/src/sce_posix_dlsym.cpp
-    endif
-else
-    SOURCES_libImplicitStd += src/filesystem.std.cpp
-    SOURCES_libImplicitStd += src/posix_file.cpp
-    ifeq ($(HAS_DLSYM),1)
-        SOURCES_libImplicitStd += src/posix_dlsym.cpp
-    endif
+SOURCES_libImplicitStd += src/filesystem.std.cpp
+SOURCES_libImplicitStd += src/posix_file.cpp
+
+# HAS_DLSYM should only be set TRUE for Linux/Posix OS.
+ifeq ($(HAS_DLSYM),1)
+    SOURCES_libImplicitStd += src/posix_dlsym.cpp
 endif
