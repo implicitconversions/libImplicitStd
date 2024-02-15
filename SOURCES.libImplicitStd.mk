@@ -7,6 +7,7 @@ SOURCES_libImplicitStd += src/standardfilesystem.cpp
 SOURCES_libImplicitStd += src/StringBuilder.cpp
 SOURCES_libImplicitStd += src/StringUtil.cpp
 SOURCES_libImplicitStd += src/strtosj.cpp
+SOURCES_libImplicitStd += src/icyReportError.cpp
 
 ifeq ($(platform),msw)
     SOURCES_libImplicitStd += src/pre_main_init_crt.cpp
