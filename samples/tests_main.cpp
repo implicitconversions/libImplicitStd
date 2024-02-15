@@ -3,7 +3,7 @@
 #include "StringTokenizer.h"
 #include "fs.h"
 
-#include "msw_app_console_init.h"
+#include "msw-app_console_init.h"
 #include "StringUtil.h"
 
 static const char* parse_inputs[] = {

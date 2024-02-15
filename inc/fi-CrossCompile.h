@@ -206,18 +206,20 @@
 
 #if defined(COMPILER_MSC)
 #	define RETAIL_DEBUGGABLE	__pragma(optimize("", off))
-#	define MASTER_DEBUGGABLE	__pragma(optimize("", off))
 #elif defined(__clang__)
 	// clang complains if this particular pragma isn't explicitly markered as a clang paragma.
 	// (it seems to accept pragma gcc warnings tho?)
-#	define MASTER_DEBUGGABLE		\
+#	define RETAIL_DEBUGGABLE		\
 	__pragma(clang optimize off)		\
 	__pragma(clang diagnostic ignored "-Wignored-attributes")
 #else
-#	define MASTER_DEBUGGABLE		\
+#	define RETAIL_DEBUGGABLE		\
 	__pragma(gcc optimize off)		\
 	__pragma(gcc diagnostic ignored "-Wignored-attributes")
 #endif
+
+// Deprecated, use RETAIL_DEBUGGABLE instead.
+#define MASTER_DEBUGGABLE	RETAIL_DEBUGGABLE
 
 // Ironically, trying to reduce warning spam on one compiler will cause added warning spam on
 // another compiler in the form of "unsupported pragma directive", so provide some helper macros
