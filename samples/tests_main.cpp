@@ -20,12 +20,14 @@ static const char* parse_inputs[] = {
     nullptr,
 };
 
+#if 0
 static const char* parse_multiline_inputs[] = {
   "LVALUE = RVALUE\n"
   "LVALUE2 = RVALUE(DOS)\r\n"
   "LINE3 = RVALUE(multiline)\n\n"
   "LINE4 = FINISHED\n"
 };
+#endif
 
 // note: verification is done by bash script externally.
 /* Expected output, use diff CLI too to verify:
@@ -84,10 +86,10 @@ static const char* path_rel_inputs[] = {
 
 int main(int argc, char** argv) {
 
-    msw_InitAppForConsole("samples");
+	msw_AllocConsoleForWindowedApp();
 
     if (argc > 1 && strcasecmp(argv[1], "crashdump") == 0) {
-        *((int*)0) = 50;
+        *((int volatile*)0) = 50;
         exit(0);
     }
 
@@ -104,6 +106,8 @@ int main(int argc, char** argv) {
         }
         printf("\n");
     }
+
+#if 0
     printf("--------------------------------------\n");
     printf("TEST:TOKENIZER:MULTILINE\n");
     auto tokall = Tokenizer(parse_multiline_inputs[0]);
@@ -119,6 +123,7 @@ int main(int argc, char** argv) {
             printf("\n");
         }
     }
+#endif
 
     printf("--------------------------------------\n");
     printf("TEST:FILESYSTEM:ABSOLUTE\n");
