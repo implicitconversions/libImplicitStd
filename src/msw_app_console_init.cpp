@@ -468,63 +468,77 @@ static void modehack(DWORD handle, bool allocated) {
 	}
 };
 
+// pass in -1 to attach to an existing console parent.
 bool msw_AttachConsole(int pid) {
 	auto previn  = ::GetStdHandle(STD_INPUT_HANDLE );
 	auto prevout = ::GetStdHandle(STD_OUTPUT_HANDLE);
 	auto preverr = ::GetStdHandle(STD_ERROR_HANDLE );
 
-	if (!prevout || !previn) {
-		if (::AttachConsole(pid)) {
-			modehack(STD_INPUT_HANDLE , false);
-			modehack(STD_OUTPUT_HANDLE, false);
-			modehack(STD_ERROR_HANDLE , false);
-
-			// remap standard pipes to a newly-opened console.
-			// _fi_redirect internally will retain the existing pipes when the application was opened, so that
-			// redirections and original TTY/console will also continue to work.
-
-			_fi_redirect_winconsole_handle(stdin,  previn );
-			_fi_redirect_winconsole_handle(stdout, prevout);
-			_fi_redirect_winconsole_handle(stderr, preverr);
-
-			return 1;
-		}
+	if (previn && prevout && preverr) {
+		return 0;
 	}
-	return 0;
-}
 
-void msw_AllocConsoleForWindowedApp() {
-	// In order to have a windowed mode application behave in a normal way when run from an existing
-	// _Windows 10 console shell_, we have to do this. This is because CMD.exe inside a windows console
-	// doesn't set up its own stdout pipes, causing GetStdHandle(STD_OUTPUT_HANDLE) to return nullptr.
-	//
-	// this workaround is for attempting to recover the stdout from an app built as a Windowed application,
-	// which normally gets piped to oblivion. This workaround won't capture stdout from DLLs though. Nothing
-	// we can do about that. The DLL has to do its own freopen() calls on its own. Sorry folks.
-	//
-	// MINTTY: This problem does not occur on mintty or other conemu or other non-shitty console apps.
-	// And we must take care _not_ to override their own pipe redirection bindings. This is why we only
-	// call AttachConsole() if the stdio handle is NULL.
-
-	auto previn  = ::GetStdHandle(STD_INPUT_HANDLE );
-	auto prevout = ::GetStdHandle(STD_OUTPUT_HANDLE);
-	auto preverr = ::GetStdHandle(STD_ERROR_HANDLE );
-
-	if (::AllocConsole()) {
-		// opt into the new VT100 system supported by Console and Terminal.
-
-		modehack(STD_INPUT_HANDLE , true);
-		modehack(STD_OUTPUT_HANDLE, true);
-		modehack(STD_ERROR_HANDLE , true);
+	if (!::AttachConsole(pid)) {
+		return 0;
 	}
+
+	modehack(STD_INPUT_HANDLE , false);
+	modehack(STD_OUTPUT_HANDLE, false);
+	modehack(STD_ERROR_HANDLE , false);
 
 	// remap standard pipes to a newly-opened console.
 	// _fi_redirect internally will retain the existing pipes when the application was opened, so that
 	// redirections and original TTY/console will also continue to work.
 
-	_fi_redirect_winconsole_handle(stdin,  previn );
-	_fi_redirect_winconsole_handle(stdout, prevout);
-	_fi_redirect_winconsole_handle(stderr, preverr);
+	if (!previn)  _fi_redirect_winconsole_handle(stdin,  nullptr);
+	if (!prevout) _fi_redirect_winconsole_handle(stdout, nullptr);
+	if (!preverr) _fi_redirect_winconsole_handle(stderr, nullptr);
+
+	return 1;
+}
+
+void msw_AllocConsoleForWindowedApp(bool force) {
+	// CMD.exe inside a windows console or windows terminal doesn't set up its own stdout pipes, causing
+	// GetStdHandle(STD_OUTPUT_HANDLE) to return nullptr. This makes it look like no console is attached
+	// even though one actually exists.
+
+	// this will attach the app to a windows console/terminal if run from one.
+	// if run from mintty or conemu, then this call will do nothing and return FALSE.
+	if (msw_AttachConsole(-1)) {
+		return;
+	}
+
+	auto previn  = ::GetStdHandle(STD_INPUT_HANDLE );
+	auto prevout = ::GetStdHandle(STD_OUTPUT_HANDLE);
+	auto preverr = ::GetStdHandle(STD_ERROR_HANDLE );
+
+	// mintty/conemu will exit here since they will have set up prevout/preverr.
+	if ((previn && prevout && preverr) && !force) {
+		return;
+	}
+
+	// getting this far means the user ran the app from Explorer or some other means where
+	// there's no console window present -and- there's 
+	if (!::AllocConsole()) {
+		return;
+	}
+
+	// opt into the new VT100 system supported by Console and Terminal.
+	modehack(STD_INPUT_HANDLE , true);
+	modehack(STD_OUTPUT_HANDLE, true);
+	modehack(STD_ERROR_HANDLE , true);
+
+	// remap standard pipes to a newly-opened console.
+	// _fi_redirect internally will retain the existing pipes when the application was opened, so that
+	// redirections and original TTY/console will also continue to work.
+
+	// TODO: we could get fancy here and allow piping to a file while also showing output to the console.
+	//       but that activity needs to be very intentionally prescribed by the user via CLI or something
+	//       and for the moment _fi_redirect_winconsole_handle() is not well suited to that task.
+
+	if (!previn)  _fi_redirect_winconsole_handle(stdin,  previn );
+	if (!prevout) _fi_redirect_winconsole_handle(stdout, prevout);
+	if (!preverr) _fi_redirect_winconsole_handle(stderr, preverr);
 }
 
 void msw_SetConsoleCP() {
