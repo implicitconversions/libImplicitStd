@@ -42,12 +42,14 @@
 #	define __has_attribute(x)  (0)
 #endif
 
-#if defined(COMPILER_MSC)
-#	define LAMBDA_ATTRIBUTE(...)	__VA_ARGS__
-#elif defined(__clang__)
-#	define LAMBDA_ATTRIBUTE(...)	__VA_ARGS__
-#else
-#	define LAMBDA_ATTRIBUTE(...)
+#if !defined(LAMBDA_ATTRIBUTE)
+#	if defined(COMPILER_MSC)
+#		define LAMBDA_ATTRIBUTE(...)	__VA_ARGS__
+#	elif defined(__clang__)
+#		define LAMBDA_ATTRIBUTE(...)	__VA_ARGS__
+#	else
+#		define LAMBDA_ATTRIBUTE(...)
+#	endif
 #endif
 
 // Help MSVC Conform to the GCC/Clang way of doing things.
@@ -122,6 +124,12 @@
 #	else
 #		define __va_inline 					__always_inline
 #	endif
+#endif
+
+#if BUILD_CFG_INHOUSE
+#	define __inline_retail
+#else
+#	define __inline_retail		__always_inline
 #endif
 
 // __builtin_expect is too clumsy to use as a regular keyword in practical use cases, so rather than define a

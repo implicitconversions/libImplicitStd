@@ -11,7 +11,7 @@
 
 #pragma comment (lib, "dbghelp.lib")
 
-#include "msw_app_console_init.h"
+#include "msw-app_console_init.h"
 #include "StringUtil.h"
 #include "EnvironUtil.h"
 #include "defer.h"
