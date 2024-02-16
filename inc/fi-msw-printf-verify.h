@@ -1,5 +1,10 @@
 #pragma once
 
+// This header is for use only on the Microsoft C/C++ Compiler
+// Do not use with clang clang-cl, or anything else, as all other compilers have built-in printf verification
+// using __verify_fmt builtin.
+
+
 // ENABLE_PRINTF_VERIFY_CHECK_ON_MSVC
 //
 // Microsoft doesn't provide a way to annoate custom-rolled user printf() functions for static analysis.

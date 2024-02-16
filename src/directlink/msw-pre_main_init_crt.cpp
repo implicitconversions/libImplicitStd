@@ -1,8 +1,10 @@
-// Pre-Main Initialization Setup for Microsoft CRT
+// Pre-Main Initialization Setup for Microsoft CRT And Windows Console
 //
-// This file must be manually included into EVERY PROJECT that intends to use the msw_app_console_init system.
-// Failure to add this file to the project which generates the executable will result in misbehavior of abort
-// dialogs, crash reporting, and console codepage selection.
+// Microsoft C/C++ Compiler/Linker:
+//   This file must be manually included into EVERY PROJECT that intends to use the msw_app_console_init system.
+//   Failure to add this file to the project which generates the executable will result in misbehavior of abort
+//   dialogs, crash reporting, and console codepage selection. (does not apply to clang/gcc)
+//
 //
 // [jstine 2022] I had developed a series of mechanations to try and force LINK to stuff this thing in the exe
 //  manifest but none of them proved reliable. Whether or not the added CRT initializers show up in the EXE seems
@@ -13,7 +15,7 @@
 
 #if PLATFORM_MSW
 
-#include "msw_app_console_init.h"
+#include "msw-app_console_init.h"
 #include "LinkSectionComdat.h"
 
 #include <corecrt_startup.h>

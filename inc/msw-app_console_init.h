@@ -6,7 +6,7 @@ static constexpr int kMswAttachParentProcess = -1;
 
 // specify a process or kMswAttachParentProcess
 bool msw_AttachConsole(int pid);
-void msw_AllocConsoleForWindowedApp();
+void msw_AllocConsoleForWindowedApp(bool force=false);
 void msw_set_abort_message(bool onoff);
 void msw_set_abort_crashdump(bool onoff);
 void msw_set_unattended_mode(bool onoff);
