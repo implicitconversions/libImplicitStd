@@ -245,3 +245,6 @@
 #else
 #	define CLANG_WARNING_DISABLE(args)
 #endif
+
+// for better or for worse. preprocessor has elif, might as well give it to the whole language. :)
+#define elif	else if
