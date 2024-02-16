@@ -75,9 +75,9 @@ inline const char *strcasestr(const char *s, const char *find) {
 // These uint8_t variants are convenient for old C++, but will probably fail hard in a world with char8_t.
 // (hopefully at that point we can just ifdef them away or whatever. --jstine)
 
-__always_inline static auto strcasestr  (uint8_t const* a, uint8_t const* b)              { return strcasestr  ((char const*)a, (char const*)b); }
-__always_inline static auto strcasecmp  (uint8_t const* a, uint8_t const* b)              { return strcasecmp  ((char const*)a, (char const*)b); }
-__always_inline static auto strncasecmp (uint8_t const* a, uint8_t const* b, ptrdiff_t c) { return strncasecmp ((char const*)a, (char const*)b,c); }
+inline auto strcasestr  (uint8_t const* a, uint8_t const* b)              { return strcasestr  ((char const*)a, (char const*)b); }
+inline auto strcasecmp  (uint8_t const* a, uint8_t const* b)              { return strcasecmp  ((char const*)a, (char const*)b); }
+inline auto strncasecmp (uint8_t const* a, uint8_t const* b, ptrdiff_t c) { return strncasecmp ((char const*)a, (char const*)b,c); }
 
 // snprintf is usually preferred over other variants:
 //   - snprintf_s has annoying parameter validation and nullifies the buffer instead of truncate.
@@ -190,6 +190,11 @@ namespace StringUtil {
 			pos += search.size();
 		}
 		return subject;
+	}
+
+	std::string LineNumberString(const char* str);
+	inline std::string LineNumberString(const std::string_view& str) {
+		return LineNumberString(str.data());
 	}
 }
 

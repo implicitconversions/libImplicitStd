@@ -10,7 +10,6 @@ template<bool AllowHeapFallback>
 int _internalBufferFormatterImpl<AllowHeapFallback>::trystrcpy(char* dest, int destlen, const char* src) {
 	if (!destlen) return 0;
 
-	char* ret = dest;
 	int pos = 0;
 	while(pos < destlen)
 	{

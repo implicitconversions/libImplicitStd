@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdarg>
 #include <charconv>
+#include <iomanip>
 #include <limits>
 #include <optional>
 
@@ -65,12 +66,11 @@ std::string g_empty_stdstring;
 //     a couple of strings together.  Ugh.  --jstine
 //
 
-__nodebug int strcpy_ajek(char* dest, int destlen, const char* src)
+int strcpy_ajek(char* dest, int destlen, const char* src)
 {
 	if (!dest || !src) return 0;
 	if (!destlen) return 0;
 
-	char* ret = dest;
 	int pos = 0;
 	while(pos < destlen)
 	{
@@ -334,7 +334,7 @@ bool StringUtil::globMatch(char const* pattern, char const* candidate) {
 		//	++globwalk;
 		//	char matches[256];
 		//	int mid = 0;
-		//	while(*globwalk && *globwalk != ']' && (mid < bulkof(matches)-1)) {
+		//	while(*globwalk && *globwalk != ']' && (mid < std::ssize(matches)-1)) {
 		//		matches[mid++] = *globwalk;
 		//	}
 		//}
@@ -469,15 +469,15 @@ std::string SanitizeUtf8(const std::string& str) {
 		else {
 			switch (sequenceLength) {
 				case 2: {
-					result.append(reinterpret_cast<const char*>(kUtf8Safe2ByteSequence), bulkof(kUtf8Safe2ByteSequence));
+					result.append(reinterpret_cast<const char*>(kUtf8Safe2ByteSequence), std::ssize(kUtf8Safe2ByteSequence));
 					break;
 				}
 				case 3: {
-					result.append(reinterpret_cast<const char*>(kUtf8Safe3ByteSequence), bulkof(kUtf8Safe3ByteSequence));
+					result.append(reinterpret_cast<const char*>(kUtf8Safe3ByteSequence), std::ssize(kUtf8Safe3ByteSequence));
 					break;
 				}
 				case 4: {
-					result.append(reinterpret_cast<const char*>(kUtf8Safe4ByteSequence), bulkof(kUtf8Safe4ByteSequence));
+					result.append(reinterpret_cast<const char*>(kUtf8Safe4ByteSequence), std::ssize(kUtf8Safe4ByteSequence));
 					break;
 				}
 				default: {
@@ -546,3 +546,15 @@ template<> std::optional< int8_t > StringUtil::Parse(std::string const& rval) { 
 template<> std::optional<float>    StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_f32(rval); }
 template<> std::optional<double>   StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_f64(rval); }
 
+std::string StringUtil::LineNumberString(const char* str) {
+	std::stringstream input(str);
+	std::stringstream output;
+	std::string line;
+
+	int lineNumber = 1;
+	while (std::getline(input, line)) {
+		output << std::setw(4) << lineNumber++ << ":  " << line << std::endl;
+	}
+
+	return output.str();
+}

@@ -40,22 +40,9 @@
 #   endif
 #endif
 
-#if !defined(PLATFORM_PS4)
-#   if defined(__ORBIS__)
-#       define PLATFORM_PS4     1
-#   else
-#       define PLATFORM_PS4     0
-#   endif
-#endif
-
-#if !defined(PLATFORM_PS5)
-#   if defined(__PROSPERO__)
-#		define PLATFORM_PS5     1
-#	else
-#   	define PLATFORM_PS5     0
-#	endif
-#endif
-
-#define PLATFORM_SCE (PLATFORM_PS4 || PLATFORM_PS5)
-
 #define PLATFORM_HAS_GETENV (PLATFORM_MSW || PLATFORM_LINUX || PLATFORM_MAC)
+
+#if __has_include("fi-platform-defines-sce.h")
+#	include "fi-platform-defines-sce.h"
+#endif
+

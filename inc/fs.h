@@ -30,7 +30,8 @@ std::string ConvertToMsw		(const std::string& unix_path);
 std::string PathFromString		(const char* path);
 
 bool		exists				(const path& path);
-void		remove				(const path& path);
+bool		remove				(const path& path);
+bool		remove_all			(const path& path);
 intmax_t	file_size			(const path& path);
 bool		is_directory		(const path& path);
 bool		create_directory	(const path& path);
