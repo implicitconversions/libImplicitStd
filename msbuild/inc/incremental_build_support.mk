@@ -25,6 +25,9 @@ incr ?= 1
 INCREMENTAL ?= $(incr)
 
 ifeq ($(INCREMENTAL),1)
+    # incr_touch_depfile: clang on msys2 writes the dep (.d) file after writing the object file, which tricks make
+    # into thinking the object is out-of-date. We use touch after the compile step to force the dep timestamp to
+    # match the obj file.
     # TODO: this might only be needed on MSYS2, maybe try NOP'ing it on linux later...
     incr_touch_depfile = @touch --reference=$@ $(basename $@).d || :
 
