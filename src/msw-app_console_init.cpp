@@ -11,7 +11,7 @@
 
 #pragma comment (lib, "dbghelp.lib")
 
-#include "msw-app_console_init.h"
+#include "msw-app-console-init.h"
 #include "StringUtil.h"
 #include "EnvironUtil.h"
 #include "defer.h"
@@ -468,11 +468,41 @@ static void modehack(DWORD handle, bool allocated) {
 	}
 };
 
+// Sample code for setting the font for an allocated system console.
+// Not recommended to use this because Windows OS will remember user settings per-application, and the
+// settings you can control vis Windows Console Settings are better than us trying to allow users to
+// control all those things through the emulator configuration.
+static void init_system_console_font() {
+	if (auto allocout = ::GetStdHandle(STD_OUTPUT_HANDLE)) {
+		CONSOLE_FONT_INFOEX font = {};
+		font.cbSize = sizeof(font);
+		font.nFont = 12;
+		font.dwFontSize.X = 11;
+		font.dwFontSize.Y = 19;
+		font.FontFamily = 54;
+		font.FontWeight = 400;
+		wcscpy(font.FaceName, L"Consolas");
+
+		SetCurrentConsoleFontEx(allocout, FALSE, &font);
+	}
+}
+
 // pass in -1 to attach to an existing console parent.
 bool msw_AttachConsole(int pid) {
 	auto previn  = ::GetStdHandle(STD_INPUT_HANDLE );
 	auto prevout = ::GetStdHandle(STD_OUTPUT_HANDLE);
 	auto preverr = ::GetStdHandle(STD_ERROR_HANDLE );
+
+	// it's possible to differentiate between a pipe redirection and a direct console output using GetConsoleMode,
+	// but the usefulness of this in practice is suspect: for example, a non-console pipe could be piped through tee
+	// and then that output still feeds into to a terminal window anyway. In practice it's better to just assume any
+	// non-NULL handle returned from GetStdHandle represents a suitable console or represents an intentional pipe
+	// redirection that implies we shouldn't open or bind our own console.
+
+	// DWORD mode = 0;
+	// ::GetConsoleMode(previn, mode);
+	// ::GetConsoleMode(prevout, mode);
+	// ::GetConsoleMode(preverr, mode);
 
 	if (previn && prevout && preverr) {
 		return 0;
@@ -497,6 +527,9 @@ bool msw_AttachConsole(int pid) {
 	return 1;
 }
 
+// force - set TRUE to open a system console window even if another one appears to be attached.
+//         When the window is force-created it will override stdout/stderr pipes set up by calling
+//         process or the shell.
 void msw_AllocConsoleForWindowedApp(bool force) {
 	// CMD.exe inside a windows console or windows terminal doesn't set up its own stdout pipes, causing
 	// GetStdHandle(STD_OUTPUT_HANDLE) to return nullptr. This makes it look like no console is attached
@@ -513,12 +546,13 @@ void msw_AllocConsoleForWindowedApp(bool force) {
 	auto preverr = ::GetStdHandle(STD_ERROR_HANDLE );
 
 	// mintty/conemu will exit here since they will have set up prevout/preverr.
-	if ((previn && prevout && preverr) && !force) {
+	// If stdin is null but stdout/stderr are valid, don't open a console unless "forced"
+	if ((prevout && preverr) && !force) {
 		return;
 	}
 
 	// getting this far means the user ran the app from Explorer or some other means where
-	// there's no console window present -and- there's 
+	// there's no console window present -and- there's
 	if (!::AllocConsole()) {
 		return;
 	}
@@ -536,9 +570,12 @@ void msw_AllocConsoleForWindowedApp(bool force) {
 	//       but that activity needs to be very intentionally prescribed by the user via CLI or something
 	//       and for the moment _fi_redirect_winconsole_handle() is not well suited to that task.
 
-	if (!previn)  _fi_redirect_winconsole_handle(stdin,  previn );
-	if (!prevout) _fi_redirect_winconsole_handle(stdout, prevout);
-	if (!preverr) _fi_redirect_winconsole_handle(stderr, preverr);
+	if (force || !previn)  _fi_redirect_winconsole_handle(stdin,  previn );
+	if (force || !prevout) _fi_redirect_winconsole_handle(stdout, prevout);
+	if (force || !preverr) _fi_redirect_winconsole_handle(stderr, preverr);
+
+	// UTF8 now works in Windows System Console as well as Windows Terminal (Win11, 22H2)
+	//printf( "UTF8 Test: これが方法です\n");
 }
 
 void msw_SetConsoleCP() {

@@ -15,7 +15,7 @@
 
 #if PLATFORM_MSW
 
-#include "msw-app_console_init.h"
+#include "msw-app-console-init.h"
 #include "LinkSectionComdat.h"
 
 #include <corecrt_startup.h>
