@@ -225,7 +225,7 @@ static void holdThreadUntilDumpFinishes() {
 
 // Only returns TRUE if atd succeeded and debugger is verified as attached.
 static bool spawnAtdExeAndWait() {
-#if ENABLE_ATTACH_TO_DEBUGGER
+#if WANT_ATTACH_TO_DEBUGGER
 	bool verbose = checkIfVerbose();
 
 	static std::atomic_bool s_attach_excl;
@@ -437,7 +437,7 @@ void msw_InitAbortBehavior() {
 	// (note in Win10, popups are disabled by default and cannot be re-enabled anyway)
 	::SetErrorMode(SEM_FAILCRITICALERRORS);
 
-#if ENABLE_ATTACH_TO_DEBUGGER
+#if WANT_ATTACH_TO_DEBUGGER
 	if (!::IsDebuggerPresent()) {
 		if (check_boolean_semi_safe(getenv(g_env_attach_debugger))) {
 			s_attached_at_startup = spawnAtdExeAndWait();
