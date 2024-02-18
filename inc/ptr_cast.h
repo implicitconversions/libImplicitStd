@@ -28,7 +28,7 @@ template <typename TL> struct _priv_ptrcast<TL    const*  const* const*>  { usin
 // For all other situations, static_cast<> should be preferred. The purpose here is to provide a better
 // alternative to reinterpret_cast<> when such morphing of types is required, such that constness and
 // indirection are preserved.
-template <typename LV, typename RV> __nodebug
+template <typename LV, typename RV> __always_inline
 constexpr typename _priv_ptrcast<LV>::Type ptr_cast(RV ptr)
 {
 	static_assert(!std::is_convertible_v<LV,RV>, "Arguments are convertible. Use static_cast<> instead.");

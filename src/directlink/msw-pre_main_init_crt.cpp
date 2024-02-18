@@ -20,7 +20,7 @@
 
 #include <corecrt_startup.h>
 
-MASTER_DEBUGGABLE
+TU_DEBUGGABLE
 
 static int _init_abort_behavior(void) {
 	msw_InitAbortBehavior();

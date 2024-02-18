@@ -16,7 +16,7 @@
 #include "EnvironUtil.h"
 #include "defer.h"
 
-MASTER_DEBUGGABLE
+TU_DEBUGGABLE
 
 #if !defined(ENABLE_ATTACH_TO_DEBUGGER)
 #	define ENABLE_ATTACH_TO_DEBUGGER	(BUILD_CFG_INHOUSE)

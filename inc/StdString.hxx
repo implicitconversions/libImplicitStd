@@ -33,7 +33,7 @@ void AppendFmtV(StdStrT& result, const StringConversionMagick& fmt, va_list list
     (const_cast<char*>(result.data() + curlen), destSize+1, fmt.c_str(), list );
 }
 
-template<typename T> __nodebug
+template<typename T> __always_inline
 void AppendFmt(T& result, const char* fmt, ...)
 {
 	va_list list;

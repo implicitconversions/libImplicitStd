@@ -125,6 +125,7 @@ template void AppendFmtV<std::string>(std::string& result, const StringConversio
 template void AppendFmt <std::string>(std::string& result, const char* fmt, ...);
 
 
+__always_inline
 std::string FormatV(const StringConversionMagick& fmt, va_list list)
 {
 	std::string result;
@@ -132,6 +133,7 @@ std::string FormatV(const StringConversionMagick& fmt, va_list list)
 	return result;
 }
 
+__always_inline
 std::string Format(const char* fmt, ...)
 {
 	va_list list;
@@ -217,8 +219,8 @@ ptrdiff_t FindFirstCase(std::string_view s, std::string_view find) {
 
 } // namespace StringUtil
 
-
-__nodebug bool u8_nul_or_whitespace(uint8_t ch) {
+__always_inline
+bool u8_nul_or_whitespace(uint8_t ch) {
 	return (ch == 0) || isspace(ch);
 }
 

@@ -83,7 +83,7 @@ inline auto strncasecmp (uint8_t const* a, uint8_t const* b, ptrdiff_t c) { retu
 //   - snprintf_s has annoying parameter validation and nullifies the buffer instead of truncate.
 //   - sprintf_s  has annoying parameter validation and nullifies the buffer instead of truncate.
 //   - snprintf   truncates the result and ensures a null terminator.
-template<intmax_t _Size> __verify_fmt(2, 3)
+template<intmax_t _Size> __always_inline __verify_fmt(2, 3)
 int snprintf(char (&_Buf)[_Size], const char *_Fmt, ...)
 {
 	int _Res;
@@ -96,7 +96,7 @@ int snprintf(char (&_Buf)[_Size], const char *_Fmt, ...)
 	return _Res;
 }
 
-template<intmax_t _Size>
+template<intmax_t _Size> __always_inline
 char const* fgets(char (&_Buf)[_Size], FILE* fp) {
 	return fgets(_Buf, _Size, fp);
 }
@@ -113,30 +113,30 @@ static const char msw_fname_illegalChars[] = "\\/:?\"<>|";
 namespace StringUtil {
 
 	// deprecated, prefer 'StartsWith', which aligns with C++20 standard conventions.
-	inline bool BeginsWith(const std::string& left, char right) {
+	__always_inline inline bool BeginsWith(const std::string& left, char right) {
 		return !left.empty() && (left[0] == right);
 	}
 
 	// deprecated, prefer 'StartsWith', which aligns with C++20 standard conventions.
-	inline bool BeginsWith(const std::string& left, const std::string& right) {
+	__always_inline inline bool BeginsWith(const std::string& left, const std::string& right) {
 		return left.compare( 0, right.length(), right) == 0;
 	}
 
-	inline bool StartsWith(const std::string& left, char right) {
+	__always_inline inline bool StartsWith(const std::string& left, char right) {
 		return !left.empty() && (left[0] == right);
 	}
 
-	inline bool StartsWith(const std::string& left, const std::string& right) {
+	__always_inline inline bool StartsWith(const std::string& left, const std::string& right) {
 		return left.compare( 0, right.length(), right) == 0;
 	}
 
-	inline bool EndsWith(const std::string& left, const std::string& right) {
+	__always_inline inline bool EndsWith(const std::string& left, const std::string& right) {
 		intmax_t startpos = left.length() - right.length();
 		if (startpos<0) return false;
 		return left.compare( startpos, right.length(), right ) == 0;
 	}
 
-	inline bool EndsWith(const std::string& left, char right) {
+	__always_inline inline bool EndsWith(const std::string& left, char right) {
 		return !left.empty() && (left[left.length()-1] == right);
 	}
 
@@ -168,13 +168,13 @@ namespace StringUtil {
 	extern ptrdiff_t FindFirstCase(std::string_view s, std::string_view find);		// equiv to strcasestr
 
 	// returns { result, error } -- result will be defbool if error occurred (error=true).
-	inline std::tuple<bool, bool> getBoolean(const StringConversionMagick& left, bool defbool) {
+	__always_inline inline std::tuple<bool, bool> getBoolean(const StringConversionMagick& left, bool defbool) {
 		bool error;
 		auto result = getBoolean(left, &error);
 		return { error ? defbool : result, error };
 	}
 
-	inline std::string	ReplaceString(std::string subject, std::string_view search, std::string_view replace) {
+	__always_inline inline std::string	ReplaceString(std::string subject, std::string_view search, std::string_view replace) {
 		size_t pos = 0;
 		while ((pos = subject.find(search, pos)) != std::string::npos) {
 			subject.replace(pos, search.size(), replace);
@@ -183,7 +183,7 @@ namespace StringUtil {
 		return subject;
 	}
 
-	inline std::string	ReplaceCase(std::string subject, std::string_view search, std::string_view replace) {
+	__always_inline inline std::string	ReplaceCase(std::string subject, std::string_view search, std::string_view replace) {
 		ptrdiff_t pos;
 		while ((pos = FindFirstCase(subject, search)) != -1) {
 			subject.replace(pos, search.size(), replace);
@@ -199,14 +199,14 @@ namespace StringUtil {
 }
 
 extern int strcpy_ajek(char* dest, int destlen, const char* src);
-template<int size> __nodebug
+template<int size> __always_inline
 int strcpy_ajek(char (&dest)[size], const char* src)
 {
 	return strcpy_ajek(dest, size, src);
 }
 
 // returns TRUE if the argument is nullptr or empty string.
-inline bool strIsEmpty(StringConversionMagick const& view) {
+__always_inline inline bool strIsEmpty(StringConversionMagick const& view) {
 	return view.empty();
 }
 
