@@ -84,7 +84,8 @@ CXXFLAGS += $(CPPSTDFLAG)
 # binaries to customers.
 WANT_SYMBOLS ?= 1
 ifeq ($(WANT_SYMBOLS), 1)
-    CPPFLAGS += -g
+    CXXFLAGS += -g
+    CFLAGS += -g
 endif
 
 ifeq ($(platform), msw)  # msw from mingw or clang64 prompt (MSYS2)
@@ -95,22 +96,26 @@ ifeq ($(platform), msw)  # msw from mingw or clang64 prompt (MSYS2)
         CC  := clang
         CXX := clang++
     endif
-    LDFLAGS += -mwindows -static -ldbghelp
-    LDFLAGS += -lpthread -lws2_32 -lwinmm
-    #LDFLAGS += -lOle32 -lSetupAPI
+
+    NEED_PREPROCESS_PRAGMA_COMMENT_LIB := 1
+
+    LDFLAGS += -mwindows -static
     DEFINES += _WINDOWS
     LD = $(CXX)
 
     m_force_includes += inc/fi-msw-printf-redirect.h
 
     ifeq ($(WANT_SYMBOLS), 1)
-        CPPFLAGS += -gcodeview
+        CXXFLAGS += -gcodeview
+        CFLAGS   += -gcodeview
     endif
 else ifeq ($(platform), osx)
     OSLBL = OSX
     ASANFLAGS = -fsanitize=address -fno-omit-frame-pointer -Wno-format-security
     LDFLAGS += -Ldeps/osx_$(shell uname -m)/lib
     LDFLAGS += -lc++
+    # could enable this for mac builds, but for the moment there's no use case.
+    NEED_PREPROCESS_PRAGMA_COMMENT_LIB := 0
 else # linux
     OSLBL = Linux
 #   ASANFLAGS = -fsanitize=address -fno-omit-frame-pointer -Wno-format-security
@@ -118,6 +123,9 @@ else # linux
     LDFLAGS += $(shell pkg-config --libs glfw3)
     LDFLAGS += -lpthread
     LD = $(CXX)
+
+    # could enable this for linux builds, but for the moment there's no use case.
+    NEED_PREPROCESS_PRAGMA_COMMENT_LIB := 0
 endif
 
 include $(LIB_IMPLICIT_STD_DIR)/SOURCES.libImplicitStd.mk
@@ -131,6 +139,10 @@ OBJECTS += $(SOURCES_C:.c=.o)
 # support for stashing all intermediate build artifacts into a subdir to keep workspace cleaner.
 # also exports absolute path to OBDIR for use by sub-make.
 OBJECTS := $(addprefix $(OBJDIR)/, $(OBJECTS))
+
+ifeq ($(NEED_PREPROCESS_PRAGMA_COMMENT_LIB),1)
+    LINK_SWITCH_INPUT_FILES := $(OBJECTS:.o=.link_switch)
+endif
 
 COMPILE.cxx := $(CPPFLAGS) $(CXXFLAGS) $(ASANFLAGS)
 COMPILE.c := $(CPPFLAGS) $(CFLAGS) $(ASANFLAGS)
@@ -158,8 +170,9 @@ mkobjdir = @[[ -d '$(@D)' ]] || mkdir -p '$(@D)'
 
 all: $(TARGET_FULLPATH)
 
-$(TARGET_FULLPATH): $(OBJECTS) $(INCREMENTAL_DEPS.LD)
-:   $(LD) $(OBJECTS) $(LDFLAGS) $(ASANFLAGS) -o $@ 
+$(TARGET_FULLPATH): PRAGMA_LINK_FLAGS=$(shell cat $(LINK_SWITCH_INPUT_FILES) < /dev/null 2> /dev/null)
+$(TARGET_FULLPATH): $(OBJECTS) $(INCREMENTAL_DEPS.LD) $(LINK_SWITCH_INPUT_FILES)
+:   $(LD) $(OBJECTS) $(LDFLAGS) $(PRAGMA_LINK_FLAGS) $(ASANFLAGS) -o $@ 
 
 $(OBJDIR)/%.o: %.cpp $(INCREMENTAL_DEPS.CXX)
 :   $(call mkobjdir)
@@ -168,8 +181,16 @@ $(OBJDIR)/%.o: %.cpp $(INCREMENTAL_DEPS.CXX)
 
 $(OBJDIR)/%.o: %.c $(INCREMENTAL_DEPS.C)
 :   $(call mkobjdir)
-:   $(CC) -c $< $(COMPILE.c) $(g_incr_flags) -o $@
+:   $(CC) -c $< $(COMPILE.C) $(g_incr_flags) -o $@
 :   $(call incr_touch_depfile)
+
+$(OBJDIR)/%.link_switch: %.cpp $(INCREMENTAL_DEPS.CXX)
+:@  $(call mkobjdir)
+:@  $(CXX) -E $< $(all_includes.macro) $(CPPFLAGS) | $(LIB_IMPLICIT_STD_DIR)/msbuild/inc/pragma_comment_lib_list.sh $@
+
+$(OBJDIR)/%.link_switch: %.c $(INCREMENTAL_DEPS.C)
+:@  $(call mkobjdir)
+:@  $(CC) -E $< $(all_includes.macro) $(CPPFLAGS) | $(LIB_IMPLICIT_STD_DIR)/msbuild/inc/pragma_comment_lib_list.sh $@
 
 
 # used for (and by) Visual studio IDE
