@@ -65,6 +65,7 @@ m_force_includes :=
 m_force_includes += inc/fi-platform-defines.h
 m_force_includes += inc/fi-CrossCompile.h
 m_force_includes += inc/fi-jfmt.h
+m_force_includes += samples/fi-compiler-warnings.h
 
 m_include_dirs_local  := . inc_stub
 m_include_dirs_public := inc inc_sys
@@ -87,6 +88,10 @@ ifeq ($(WANT_SYMBOLS), 1)
     CXXFLAGS += -g
     CFLAGS += -g
 endif
+
+WANT_ATTACH_TO_DEBUGGER ?= 1
+
+DEFINES += WANT_ATTACH_TO_DEBUGGER=$(WANT_ATTACH_TO_DEBUGGER)
 
 ifeq ($(platform), msw)  # msw from mingw or clang64 prompt (MSYS2)
     OSLBL = Windows

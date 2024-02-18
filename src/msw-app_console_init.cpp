@@ -9,7 +9,7 @@
 #include <io.h>
 #include <atomic>
 
-#pragma comment (lib, "dbghelp.lib")
+#pragma comment (lib, "dbghelp")
 
 #include "msw-app-console-init.h"
 #include "StringUtil.h"
@@ -18,8 +18,10 @@
 
 TU_DEBUGGABLE
 
-#if !defined(ENABLE_ATTACH_TO_DEBUGGER)
-#	define ENABLE_ATTACH_TO_DEBUGGER	(BUILD_CFG_INHOUSE)
+// TODO: separate all ATD logic into its own file and then allow programs to register the behavior
+//       by some means, to avoid the need to recompile libimplicitstd with or without this feature.
+#if !defined(WANT_ATTACH_TO_DEBUGGER)
+#	define WANT_ATTACH_TO_DEBUGGER	(0)
 #endif
 
 // CALL_FIRST means call this exception handler first;
@@ -235,7 +237,7 @@ static bool spawnAtdExeAndWait() {
 
 	char procstr[16];
 	auto pid = ::GetCurrentProcessId();
-	snprintf(procstr, "%d", pid);
+	snprintf(procstr, "%jd", JFMT(pid));
 
 	auto exitcode = 0;
 	char atd_exe_path[MAX_PATH] = {};
