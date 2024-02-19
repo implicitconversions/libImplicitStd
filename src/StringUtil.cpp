@@ -133,7 +133,7 @@ std::string FormatV(const StringConversionMagick& fmt, va_list list)
 	return result;
 }
 
-yesinline
+__va_inline
 std::string Format(const char* fmt, ...)
 {
 	va_list list;
