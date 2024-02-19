@@ -25,19 +25,19 @@ template <typename T> struct _priv_voidcast<T   const** const*>        { using T
 template <typename T> struct _priv_voidcast<T   const*  const* const*> { using Type = void const* const* const*;	};
 
 // Cast a pointer to a void pointer, preserving strictness about constness and indirection
-template <typename T> __nodebug
+template <typename T> yesinline
 constexpr typename _priv_voidcast<T>::Type void_cast(T ptr)
 {
 	return (typename _priv_voidcast<T>::Type)ptr;
 }
 
-template <typename T> __nodebug
+template <typename T> yesinline
 constexpr intptr_t intptr_cast(T ptr)
 {
 	return (intptr_t)(typename _priv_voidcast<T>::Type)ptr;
 }
 
-template <typename T> __nodebug
+template <typename T> yesinline
 constexpr uintptr_t uintptr_cast(T ptr)
 {
 	return (uintptr_t)(typename _priv_voidcast<T>::Type)ptr;

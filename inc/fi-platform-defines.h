@@ -2,9 +2,18 @@
 
 #pragma once
 
-// Default selection of MSW platform is based on using the Microsoft Compiler.
-// This is not a foolproof assumption, but a special environment can specify these
-// defines explicitly via makefile.
+#if __has_include("fi-platform-defines-sce.h")
+#	include "fi-platform-defines-sce.h"
+#endif
+
+// Default selection of MSW platform is based on the _WIN32 define being provided by compiler.
+// This is not a foolproof assumption, but a special environment can specify these defines
+// explicitly via makefile.
+
+// PLATFORM_MSW - (M)icro(S)oft (W)indows.  It's easier to grep-search for than 'win' or 'win32'
+// This define describes the Windows Platform API and Operating System APIs only, and should be used sparingly.
+// Most of the time it's more appropriate to use _MSC_VER for compiler-specific and mscrt features (the CRT
+// is part of the compiler, not the OS).
 
 #if !defined(PLATFORM_MSW)
 #   if defined(_WIN32)
@@ -41,8 +50,4 @@
 #endif
 
 #define PLATFORM_HAS_GETENV (PLATFORM_MSW || PLATFORM_LINUX || PLATFORM_MAC)
-
-#if __has_include("fi-platform-defines-sce.h")
-#	include "fi-platform-defines-sce.h"
-#endif
 

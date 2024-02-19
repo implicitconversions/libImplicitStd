@@ -52,11 +52,16 @@
 #	endif
 #endif
 
+// yesinline explained:
+//   can't use __always_inline because glibc hijacked it and broke it by defining it as "inline __attribute__((__always_inline__))"
+//   instead of just the attribute, thereby mixing two entirely different directives (one for the TU and one for the optimizer)
+//   into one statement. This becomes a big problem when using LTO, which by deifnition allows us to do inline optimization 
+//   across modules without having to use the C++ `inline` keyword and include them into all TUs.
+
 // Help MSVC Conform to the GCC/Clang way of doing things.
 #if defined(COMPILER_MSC)
 
 #	define __builtin_bswap32(a)			_byteswap_ulong(a)
-#	define __noinline					__declspec(noinline)
 #	define __builtin_unreachable()		__assume(0)
 #	define __builtin_assume(cond)		__assume(cond)
 #	define __builtin_trap()				__debugbreak()
@@ -80,29 +85,17 @@
 #		define __msvc_ctor_inline			__forceinline
 #	endif
 
-#	define __always_inline			__msvc_always_inline
-#	define __ctor_inline			__msvc_ctor_inline		// workaround for VS2019 bug (https://developercommunity.visualstudio.com/t/msvc::forceinline-is-ignored-when-ap/1623437)
-
-#	if !BUILD_DEBUG
-#		define __nodebug				__msvc_always_inline
-#	else
-#		define __nodebug
-#	endif
+#	define __noinline					__declspec(noinline)
+#	define yesinline					__msvc_always_inline
+#	define __ctor_inline				__msvc_ctor_inline		// workaround for VS2019 bug (https://developercommunity.visualstudio.com/t/msvc::forceinline-is-ignored-when-ap/1623437)
 
 #	define __va_inline 					__msvc_always_inline	// workaround for GCC complaining about always_inline on varadics
 
 #else
 
-#	if defined(__MINGW64__)
-#		define __always_inline			__attribute__((__always_inline__))
-#	endif
+#	define yesinline					__attribute__((__always_inline__))
 
-#   define __ctor_inline				__always_inline
-#	if __has_attribute(__nodebug__)
-#		define __nodebug				__attribute__((__nodebug__))
-#	else
-#		define __nodebug
-#	endif
+#   define __ctor_inline				yesinline
 #	define __immdebug					[[gnu::used, gnu::retain]]	// expose for VS immediate debug window use
 #	define __retain_used				[[gnu::used, gnu::retain]]
 #   define __unused                     [[maybe_unused]]
@@ -118,18 +111,12 @@
 
 #	if defined(__GNUC__)
 		// workaround for GCC complaining about always_inline on varadics
-		// - Why is this an error and not a warning like all other situations where __always_inline fails to apply?
+		// - Why is this an error and not a warning like all other situations where yesinline fails to apply?
 		// - Why can't it be turned off like other errors/warnings?
 #		define __va_inline
 #	else
-#		define __va_inline 					__always_inline
+#		define __va_inline 					yesinline
 #	endif
-#endif
-
-#if BUILD_CFG_INHOUSE
-#	define __inline_retail
-#else
-#	define __inline_retail		__always_inline
 #endif
 
 // __builtin_expect is too clumsy to use as a regular keyword in practical use cases, so rather than define a
@@ -186,44 +173,28 @@
 #	define __verify_fmt(fmtpos, vapos)  __attribute__ ((format (printf, fmtpos, vapos)))
 #endif
 
-#if BUILD_HOUSE
-#	if defined(COMPILER_MSC)
-#		define HOUSE_DEBUGGABLE	__pragma(optimize("", off))
-#	elif defined(__clang__)
-		// [jstine 2022] clang will spam warnings about ignored attributes around __nodebug and __always_inline. We don't want to turn this
-		// warning off globally because it has about 25 useful warnings in addition to this one very useless one.
-#		define HOUSE_DEBUGGABLE		\
-			__pragma(clang optimize off)	\
-			__pragma(clang diagnostic ignored "-Wignored-attributes")
-#	else
-#		define HOUSE_DEBUGGABLE		\
-			__pragma(gcc optimize off)	\
-			__pragma(gcc diagnostic ignored "-Wignored-attributes")
-#	endif
-#else
-#	define HOUSE_DEBUGGABLE
-#endif
-
+// TU_DEBUGGABLE - TranslationUnit Debuggable.
+//   Disables optimizations for the given TU. Intended for sue at the top of a file, but can also be
+//   used in the middle of a file to allow the latter portion of the file to be debuggable.
+//
+// Implementation Remarks:
+//   Ironically, trying to reduce warning spam on one compiler will cause added warning spam on
+//   another compiler in the form of "unsupported pragma directive", so provide some helper macros
+//   to expedite local-scope warning disabling without adding warings to other compilers.
 #if defined(COMPILER_MSC)
-#	define RETAIL_DEBUGGABLE	__pragma(optimize("", off))
+#	define TU_DEBUGGABLE	__pragma(optimize("", off))
 #elif defined(__clang__)
-	// clang complains if this particular pragma isn't explicitly markered as a clang paragma.
-	// (it seems to accept pragma gcc warnings tho?)
-#	define RETAIL_DEBUGGABLE		\
-	__pragma(clang optimize off)		\
-	__pragma(clang diagnostic ignored "-Wignored-attributes")
+	// [jstine 2022] clang will spam warnings about ignored attributes around yesinline. We don't want to turn this
+	// warning off globally because it has about 25 useful warnings in addition to this one very useless one.
+#	define TU_DEBUGGABLE		\
+		__pragma(clang optimize off)	\
+		__pragma(clang diagnostic ignored "-Wignored-attributes")
 #else
-#	define RETAIL_DEBUGGABLE		\
-	__pragma(gcc optimize off)		\
-	__pragma(gcc diagnostic ignored "-Wignored-attributes")
+#	define TU_DEBUGGABLE		\
+		__pragma(gcc optimize off)	\
+		__pragma(gcc diagnostic ignored "-Wignored-attributes")
 #endif
 
-// Deprecated, use RETAIL_DEBUGGABLE instead.
-#define MASTER_DEBUGGABLE	RETAIL_DEBUGGABLE
-
-// Ironically, trying to reduce warning spam on one compiler will cause added warning spam on
-// another compiler in the form of "unsupported pragma directive", so provide some helper macros
-// to expedite local-scope warning disabling without adding warings to other compilers.
 #if COMPILER_MSC
 #	define MSC_WARNING_DISABLE(nums)			\
 		__pragma(warning(disable: nums))

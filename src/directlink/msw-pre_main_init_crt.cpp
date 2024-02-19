@@ -15,12 +15,12 @@
 
 #if PLATFORM_MSW
 
-#include "msw-app_console_init.h"
+#include "msw-app-console-init.h"
 #include "LinkSectionComdat.h"
 
 #include <corecrt_startup.h>
 
-MASTER_DEBUGGABLE
+TU_DEBUGGABLE
 
 static int _init_abort_behavior(void) {
 	msw_InitAbortBehavior();
