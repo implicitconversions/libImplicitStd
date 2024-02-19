@@ -90,7 +90,7 @@ struct StringViewSpecificArg {
 	StringViewSpecificArg(const char (&str)[size]) : m_stdstr(str, size) {
 	}
 
-	__always_inline
+	yesinline
 	bool isView() const {
 		if constexpr (allowCString) {
 			return !m_cstr;
@@ -100,14 +100,14 @@ struct StringViewSpecificArg {
 		}
 	}
 
-	__always_inline
+	yesinline
 	int read_next() {
 		int result = peek_next();
 		m_readpos += (result != 0);
 		return result;
 	}
 
-	__always_inline
+	yesinline
 	int peek_next() const {
 		if constexpr (allowCString) {
 			if (!isView()) {
@@ -124,7 +124,7 @@ struct StringViewSpecificArg {
 		return 0;
 	}
 
-	__always_inline
+	yesinline
 	int readpos() const {
 		return m_readpos;
 	}
@@ -134,12 +134,12 @@ struct StringViewSpecificArg {
 		return m_stdstr;
 	}
 
-	__always_inline
+	yesinline
 	char const* data() const {
 		return isView() ? m_stdstr.data() : m_cstr;
 	}
 
-	__always_inline
+	yesinline
 	bool empty() const {
 		if (isView()) { 
 			return m_stdstr.empty();

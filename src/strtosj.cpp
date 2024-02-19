@@ -21,7 +21,7 @@
 //
 //   --jstine Dec 2022
 
-template< typename T > __always_inline
+template< typename T > yesinline
 std::make_unsigned_t<T> to_unsigned(T src) {
 	return (std::make_unsigned_t<T>)src;
 }
