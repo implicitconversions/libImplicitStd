@@ -68,7 +68,7 @@ void _internalBufferFormatterImpl<AllowHeapFallback>::longbuf_appendfv(int expec
 	}
 }
 
-template<bool AllowHeapFallback> __always_inline
+template<bool AllowHeapFallback> yesinline
 void _internalBufferFormatterImpl<AllowHeapFallback>::append(const char* msg) {
 	if (expect_false(!msg || !msg[0])) return;
 
@@ -145,7 +145,7 @@ void _internalBufferFormatterImpl<AllowHeapFallback>::appendfv(const char* fmt, 
 	}
 }
 
-template<bool AllowHeapFallback> __always_inline
+template<bool AllowHeapFallback> yesinline
 void _internalBufferFormatterImpl<AllowHeapFallback>::clear() {
 	wpos = 0;
 	buffer[0] = 0;
@@ -156,7 +156,7 @@ void _internalBufferFormatterImpl<AllowHeapFallback>::clear() {
 	}
 }
 
-template<bool AllowHeapFallback> __always_inline
+template<bool AllowHeapFallback> yesinline
 void _internalBufferFormatterImpl<AllowHeapFallback>::formatv(const char* fmt, va_list args) {
 	clear();
 	return appendfv(fmt, args);
@@ -165,18 +165,18 @@ void _internalBufferFormatterImpl<AllowHeapFallback>::formatv(const char* fmt, v
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<int bufsize> __always_inline
+template<int bufsize> yesinline
 void StringBuilder<bufsize>::clear() {
 	_internalFormatterSpillToHeap{buffer, bufsize, wpos, &longbuf}.clear();
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> yesinline
 StringBuilder<bufsize>& StringBuilder<bufsize>::append(const char* msg) {
 	_internalFormatterSpillToHeap{buffer, bufsize, wpos, &longbuf}.append(msg);
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> yesinline
 StringBuilder<bufsize>& StringBuilder<bufsize>::append(char ch) {
 	_internalFormatterSpillToHeap{buffer, bufsize, wpos, &longbuf}.append(ch);
 	return *this;
@@ -197,7 +197,7 @@ StringBuilder<bufsize>& StringBuilder<bufsize>::appendf(const char* fmt, ...) {
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> yesinline
 StringBuilder<bufsize>& StringBuilder<bufsize>::formatv(const char* fmt, va_list args) {
 	clear();
 	return appendfv(fmt, args);
@@ -214,18 +214,18 @@ StringBuilder<bufsize>& StringBuilder<bufsize>::format(const char* fmt, ...) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<int bufsize> __always_inline
+template<int bufsize> yesinline
 void StringBuilderTrunc<bufsize>::clear() {
 	_internalFormatterTruncate{buffer, bufsize, wpos}.clear();
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> yesinline
 StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::append(const char* msg) {
 	_internalFormatterTruncate{buffer, bufsize, wpos}.append(msg);
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> yesinline
 StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::append(char ch) {
 	_internalFormatterTruncate{buffer, bufsize, wpos}.append(ch);
 	return *this;
@@ -246,7 +246,7 @@ StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::appendf(const char* fm
 	return *this;
 }
 
-template<int bufsize> __always_inline
+template<int bufsize> yesinline
 StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::formatv(const char* fmt, va_list args) {
 	clear();
 	return appendfv(fmt, args);

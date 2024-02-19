@@ -20,8 +20,8 @@
 #endif
 
 #if defined(_MSC_VER)
-#   if !defined(__always_inline)
-#       define __always_inline				__forceinline
+#   if !defined(yesinline)
+#       define yesinline				__forceinline
 #   endif
 #   if !defined(__noinline)
 #	    define	__noinline					__declspec(noinline)
@@ -125,7 +125,7 @@ template void AppendFmtV<std::string>(std::string& result, const StringConversio
 template void AppendFmt <std::string>(std::string& result, const char* fmt, ...);
 
 
-__always_inline
+yesinline
 std::string FormatV(const StringConversionMagick& fmt, va_list list)
 {
 	std::string result;
@@ -133,7 +133,7 @@ std::string FormatV(const StringConversionMagick& fmt, va_list list)
 	return result;
 }
 
-__always_inline
+yesinline
 std::string Format(const char* fmt, ...)
 {
 	va_list list;
@@ -219,7 +219,7 @@ ptrdiff_t FindFirstCase(std::string_view s, std::string_view find) {
 
 } // namespace StringUtil
 
-__always_inline
+yesinline
 bool u8_nul_or_whitespace(uint8_t ch) {
 	return (ch == 0) || isspace(ch);
 }

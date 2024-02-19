@@ -57,18 +57,18 @@
 //
 
 
-template< typename T > __always_inline T volatile& volatize(volatile T& src) {
+template< typename T > yesinline T volatile& volatize(volatile T& src) {
 	return reinterpret_cast<T volatile&>(src);
 }
 
-template< typename T > __always_inline volatile T volatize(volatile T const& src) {
+template< typename T > yesinline volatile T volatize(volatile T const& src) {
 	return reinterpret_cast<volatile T const&>(src);
 }
 
 // atomic loads on x64 architectures are fine to just rely on compiler barriers. Memory fences on loads
 // are not needed and generally not recommended. Fencing and order of writes should be enforced by the
 // store/write threads, which tends lead to improved CPU cache performance broadly.
-template< typename T > __always_inline T AtomicLoad(volatile T const&  src)  {
+template< typename T > yesinline T AtomicLoad(volatile T const&  src)  {
 	return reinterpret_cast<volatile T const&>(src);
 }
 
@@ -82,44 +82,44 @@ template< typename T > __always_inline T AtomicLoad(volatile T const&  src)  {
 using _interlocked_s32 = long volatile*;
 using _interlocked_s8  = char volatile*;
 
-__always_inline static int8_t  AtomicExchange			(volatile int8_t& dest, int8_t src )								{ return _InterlockedExchange8			((_interlocked_s8 ) &dest, src); }
-__always_inline static int8_t  AtomicExchangeAdd		(volatile int8_t& src,  int8_t amount )								{ return _InterlockedExchangeAdd8		((_interlocked_s8 ) &src, (long)amount); }
-__always_inline static int8_t  AtomicCompareExchange	(volatile int8_t& dest, int8_t exchange, int8_t comparand )			{ return _InterlockedCompareExchange8	((_interlocked_s8 ) &dest, exchange, comparand); }
+yesinline static int8_t  AtomicExchange			(volatile int8_t& dest, int8_t src )								{ return _InterlockedExchange8			((_interlocked_s8 ) &dest, src); }
+yesinline static int8_t  AtomicExchangeAdd		(volatile int8_t& src,  int8_t amount )								{ return _InterlockedExchangeAdd8		((_interlocked_s8 ) &src, (long)amount); }
+yesinline static int8_t  AtomicCompareExchange	(volatile int8_t& dest, int8_t exchange, int8_t comparand )			{ return _InterlockedCompareExchange8	((_interlocked_s8 ) &dest, exchange, comparand); }
 
 static_assert(sizeof(bool) == 1);
-__always_inline static bool    AtomicExchange			(volatile bool& dest, bool src )									{ return _InterlockedExchange8			((_interlocked_s8 ) &dest, src); }
-__always_inline static bool    AtomicCompareExchange	(volatile bool& dest, bool exchange, bool comparand )				{ return _InterlockedCompareExchange8	((_interlocked_s8 ) &dest, exchange, comparand); }
+yesinline static bool    AtomicExchange			(volatile bool& dest, bool src )									{ return _InterlockedExchange8			((_interlocked_s8 ) &dest, src); }
+yesinline static bool    AtomicCompareExchange	(volatile bool& dest, bool exchange, bool comparand )				{ return _InterlockedCompareExchange8	((_interlocked_s8 ) &dest, exchange, comparand); }
 
-__always_inline static int32_t  AtomicInc				(volatile int32_t& val)												{ return _InterlockedIncrement			((_interlocked_s32 ) &val); }
-__always_inline static int64_t  AtomicInc				(volatile int64_t& val)												{ return _InterlockedIncrement64		((int64_t volatile*) &val); }
-__always_inline static int32_t  AtomicDec				(volatile int32_t& val)												{ return _InterlockedDecrement			((_interlocked_s32 ) &val); }
-__always_inline static int64_t  AtomicDec				(volatile int64_t& val)												{ return _InterlockedDecrement64		((int64_t volatile*) &val); }
-__always_inline static int32_t  AtomicExchange			(volatile int32_t& dest, int32_t src )								{ return _InterlockedExchange			((_interlocked_s32 ) &dest, src); }
-__always_inline static int64_t  AtomicExchange			(volatile int64_t& dest, int64_t src )								{ return _InterlockedExchange64			((int64_t volatile*) &dest, src); }
-__always_inline static int32_t  AtomicExchangeAdd		(volatile int32_t& src,  int32_t amount )							{ return _InterlockedExchangeAdd		((_interlocked_s32 ) &src, (long)amount); }
-__always_inline static int64_t  AtomicExchangeAdd		(volatile int64_t& src,  int64_t amount )							{ return _InterlockedExchangeAdd64		((int64_t volatile*) &src, amount); }
-__always_inline static int32_t  AtomicCompareExchange	(volatile int32_t& dest, int32_t exchange, int32_t comparand )		{ return _InterlockedCompareExchange	((_interlocked_s32 ) &dest, exchange, comparand); }
-__always_inline static int64_t  AtomicCompareExchange	(volatile int64_t& dest, int64_t exchange, int64_t comparand )		{ return _InterlockedCompareExchange64	((int64_t volatile*) &dest, exchange, comparand); }
+yesinline static int32_t  AtomicInc				(volatile int32_t& val)												{ return _InterlockedIncrement			((_interlocked_s32 ) &val); }
+yesinline static int64_t  AtomicInc				(volatile int64_t& val)												{ return _InterlockedIncrement64		((int64_t volatile*) &val); }
+yesinline static int32_t  AtomicDec				(volatile int32_t& val)												{ return _InterlockedDecrement			((_interlocked_s32 ) &val); }
+yesinline static int64_t  AtomicDec				(volatile int64_t& val)												{ return _InterlockedDecrement64		((int64_t volatile*) &val); }
+yesinline static int32_t  AtomicExchange			(volatile int32_t& dest, int32_t src )								{ return _InterlockedExchange			((_interlocked_s32 ) &dest, src); }
+yesinline static int64_t  AtomicExchange			(volatile int64_t& dest, int64_t src )								{ return _InterlockedExchange64			((int64_t volatile*) &dest, src); }
+yesinline static int32_t  AtomicExchangeAdd		(volatile int32_t& src,  int32_t amount )							{ return _InterlockedExchangeAdd		((_interlocked_s32 ) &src, (long)amount); }
+yesinline static int64_t  AtomicExchangeAdd		(volatile int64_t& src,  int64_t amount )							{ return _InterlockedExchangeAdd64		((int64_t volatile*) &src, amount); }
+yesinline static int32_t  AtomicCompareExchange	(volatile int32_t& dest, int32_t exchange, int32_t comparand )		{ return _InterlockedCompareExchange	((_interlocked_s32 ) &dest, exchange, comparand); }
+yesinline static int64_t  AtomicCompareExchange	(volatile int64_t& dest, int64_t exchange, int64_t comparand )		{ return _InterlockedCompareExchange64	((int64_t volatile*) &dest, exchange, comparand); }
 
-__always_inline static uint32_t AtomicInc				(volatile uint32_t& val)											{ return _InterlockedIncrement			((_interlocked_s32 ) &val); }
-__always_inline static uint64_t AtomicInc				(volatile uint64_t& val)											{ return _InterlockedIncrement64		((int64_t volatile*) &val); }
-__always_inline static uint32_t AtomicDec				(volatile uint32_t& val)											{ return _InterlockedDecrement			((_interlocked_s32 ) &val); }
-__always_inline static uint64_t AtomicDec				(volatile uint64_t& val)											{ return _InterlockedDecrement64		((int64_t volatile*) &val); }
-__always_inline static uint32_t AtomicExchange			(volatile uint32_t& dest, uint32_t src )							{ return _InterlockedExchange			((_interlocked_s32 ) &dest, src); }
-__always_inline static uint64_t AtomicExchange			(volatile uint64_t& dest, uint64_t src )							{ return _InterlockedExchange64			((int64_t volatile*) &dest, src); }
-__always_inline static uint32_t AtomicExchangeAdd		(volatile uint32_t& src,  uint32_t amount )							{ return _InterlockedExchangeAdd		((_interlocked_s32 ) &src, (long)amount); }
-__always_inline static uint64_t AtomicExchangeAdd		(volatile uint64_t& src,  uint64_t amount )							{ return _InterlockedExchangeAdd64		((int64_t volatile*) &src, amount); }
-__always_inline static uint32_t AtomicCompareExchange	(volatile uint32_t& dest, uint32_t exchange, uint32_t comparand )	{ return _InterlockedCompareExchange	((_interlocked_s32 ) &dest, exchange, comparand); }
-__always_inline static uint64_t AtomicCompareExchange	(volatile uint64_t& dest, uint64_t exchange, uint64_t comparand )	{ return _InterlockedCompareExchange64	((int64_t volatile*) &dest, exchange, comparand); }
+yesinline static uint32_t AtomicInc				(volatile uint32_t& val)											{ return _InterlockedIncrement			((_interlocked_s32 ) &val); }
+yesinline static uint64_t AtomicInc				(volatile uint64_t& val)											{ return _InterlockedIncrement64		((int64_t volatile*) &val); }
+yesinline static uint32_t AtomicDec				(volatile uint32_t& val)											{ return _InterlockedDecrement			((_interlocked_s32 ) &val); }
+yesinline static uint64_t AtomicDec				(volatile uint64_t& val)											{ return _InterlockedDecrement64		((int64_t volatile*) &val); }
+yesinline static uint32_t AtomicExchange			(volatile uint32_t& dest, uint32_t src )							{ return _InterlockedExchange			((_interlocked_s32 ) &dest, src); }
+yesinline static uint64_t AtomicExchange			(volatile uint64_t& dest, uint64_t src )							{ return _InterlockedExchange64			((int64_t volatile*) &dest, src); }
+yesinline static uint32_t AtomicExchangeAdd		(volatile uint32_t& src,  uint32_t amount )							{ return _InterlockedExchangeAdd		((_interlocked_s32 ) &src, (long)amount); }
+yesinline static uint64_t AtomicExchangeAdd		(volatile uint64_t& src,  uint64_t amount )							{ return _InterlockedExchangeAdd64		((int64_t volatile*) &src, amount); }
+yesinline static uint32_t AtomicCompareExchange	(volatile uint32_t& dest, uint32_t exchange, uint32_t comparand )	{ return _InterlockedCompareExchange	((_interlocked_s32 ) &dest, exchange, comparand); }
+yesinline static uint64_t AtomicCompareExchange	(volatile uint64_t& dest, uint64_t exchange, uint64_t comparand )	{ return _InterlockedCompareExchange64	((int64_t volatile*) &dest, exchange, comparand); }
 
-template<class T> __always_inline static T* AtomicExchangePointer	(T* (&dest), T* src)									{ return static_cast<T*>(_InterlockedExchangePointer((void* volatile*) &dest, src)); }
-template<class T> __always_inline static T* AtomicExchangePointer	(T* (&dest), std::nullptr_t src)						{ return static_cast<T*>(_InterlockedExchangePointer((void* volatile*) &dest, src)); }
+template<class T> yesinline static T* AtomicExchangePointer	(T* (&dest), T* src)									{ return static_cast<T*>(_InterlockedExchangePointer((void* volatile*) &dest, src)); }
+template<class T> yesinline static T* AtomicExchangePointer	(T* (&dest), std::nullptr_t src)						{ return static_cast<T*>(_InterlockedExchangePointer((void* volatile*) &dest, src)); }
 
-template<class T> __always_inline static T* AtomicCompareExchangePointer(T* (&dest), T* exchange, T* comparand)			    { return static_cast<T*>(_InterlockedCompareExchangePointer((void* volatile*) &dest, exchange, comparand)); }
-template<class T> __always_inline static T* AtomicCompareExchangePointer(T* (&dest), T* exchange, std::nullptr_t comparand) { return static_cast<T*>(_InterlockedCompareExchangePointer((void* volatile*) &dest, exchange, comparand)); }
+template<class T> yesinline static T* AtomicCompareExchangePointer(T* (&dest), T* exchange, T* comparand)			    { return static_cast<T*>(_InterlockedCompareExchangePointer((void* volatile*) &dest, exchange, comparand)); }
+template<class T> yesinline static T* AtomicCompareExchangePointer(T* (&dest), T* exchange, std::nullptr_t comparand) { return static_cast<T*>(_InterlockedCompareExchangePointer((void* volatile*) &dest, exchange, comparand)); }
 
 template< typename T >
-__always_inline T AtomicExchangeEnum( volatile T& dest, T src )
+yesinline T AtomicExchangeEnum( volatile T& dest, T src )
 {
 	// for atomic exchange purposes, we can disregard sign. Only size matters.
 	if constexpr (sizeof(T) == 1) {
@@ -137,7 +137,7 @@ __always_inline T AtomicExchangeEnum( volatile T& dest, T src )
 }
 
 template< typename T >
-__always_inline T AtomicCompareExchangeEnum( volatile T& dest, T exchange, T comparand )
+yesinline T AtomicCompareExchangeEnum( volatile T& dest, T exchange, T comparand )
 {
 	// for atomic exchange purposes, we can disregard sign. Only size matters.
 	if constexpr (sizeof(T) == 1) {
@@ -174,50 +174,50 @@ __always_inline T AtomicCompareExchangeEnum( volatile T& dest, T exchange, T com
 
 #define _tso_atomic_policy __ATOMIC_SEQ_CST
 
-__always_inline static int8_t  AtomicExchange			(volatile int8_t& dest, int8_t src )								{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
-__always_inline static int8_t  AtomicExchangeAdd		(volatile int8_t& src,  int8_t amount )								{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
-__always_inline static int8_t  AtomicCompareExchange	(volatile int8_t& dest, int8_t exchange, int8_t comparand )			{ __atomic_compare_exchange_n	(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
+yesinline static int8_t  AtomicExchange			(volatile int8_t& dest, int8_t src )								{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
+yesinline static int8_t  AtomicExchangeAdd		(volatile int8_t& src,  int8_t amount )								{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
+yesinline static int8_t  AtomicCompareExchange	(volatile int8_t& dest, int8_t exchange, int8_t comparand )			{ __atomic_compare_exchange_n	(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
 
 static_assert(sizeof(bool) == 1);
-__always_inline static int8_t  AtomicExchange			(volatile bool& dest, bool src )									{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
-__always_inline static int8_t  AtomicCompareExchange	(volatile bool& dest, bool exchange, bool comparand )				{ __atomic_compare_exchange_n	(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
+yesinline static int8_t  AtomicExchange			(volatile bool& dest, bool src )									{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
+yesinline static int8_t  AtomicCompareExchange	(volatile bool& dest, bool exchange, bool comparand )				{ __atomic_compare_exchange_n	(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
 
-__always_inline static int32_t  AtomicInc				(volatile int32_t& val)												{ return __atomic_fetch_add		(&val,  1, _tso_atomic_policy) + 1; }
-__always_inline static int64_t  AtomicInc				(volatile int64_t& val)												{ return __atomic_fetch_add		(&val,  1, _tso_atomic_policy) + 1; }
-__always_inline static int32_t  AtomicDec				(volatile int32_t& val)												{ return __atomic_fetch_add		(&val, -1, _tso_atomic_policy) - 1; }
-__always_inline static int64_t  AtomicDec				(volatile int64_t& val)												{ return __atomic_fetch_add		(&val, -1, _tso_atomic_policy) - 1; }
-__always_inline static int32_t  AtomicExchange			(volatile int32_t& dest, int32_t src )								{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
-__always_inline static int64_t  AtomicExchange			(volatile int64_t& dest, int64_t src )								{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
-__always_inline static int32_t  AtomicExchangeAdd		(volatile int32_t& src,  int32_t amount )							{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
-__always_inline static int64_t  AtomicExchangeAdd		(volatile int64_t& src,  int64_t amount )							{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
-__always_inline static int32_t  AtomicCompareExchange	(volatile int32_t& dest, int32_t exchange, int32_t comparand )		{ __atomic_compare_exchange_n	(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
-__always_inline static int64_t  AtomicCompareExchange	(volatile int64_t& dest, int64_t exchange, int64_t comparand )		{ __atomic_compare_exchange_n	(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
+yesinline static int32_t  AtomicInc				(volatile int32_t& val)												{ return __atomic_fetch_add		(&val,  1, _tso_atomic_policy) + 1; }
+yesinline static int64_t  AtomicInc				(volatile int64_t& val)												{ return __atomic_fetch_add		(&val,  1, _tso_atomic_policy) + 1; }
+yesinline static int32_t  AtomicDec				(volatile int32_t& val)												{ return __atomic_fetch_add		(&val, -1, _tso_atomic_policy) - 1; }
+yesinline static int64_t  AtomicDec				(volatile int64_t& val)												{ return __atomic_fetch_add		(&val, -1, _tso_atomic_policy) - 1; }
+yesinline static int32_t  AtomicExchange			(volatile int32_t& dest, int32_t src )								{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
+yesinline static int64_t  AtomicExchange			(volatile int64_t& dest, int64_t src )								{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
+yesinline static int32_t  AtomicExchangeAdd		(volatile int32_t& src,  int32_t amount )							{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
+yesinline static int64_t  AtomicExchangeAdd		(volatile int64_t& src,  int64_t amount )							{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
+yesinline static int32_t  AtomicCompareExchange	(volatile int32_t& dest, int32_t exchange, int32_t comparand )		{ __atomic_compare_exchange_n	(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
+yesinline static int64_t  AtomicCompareExchange	(volatile int64_t& dest, int64_t exchange, int64_t comparand )		{ __atomic_compare_exchange_n	(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
 
-__always_inline static uint32_t AtomicInc				(volatile uint32_t& val)											{ return __atomic_fetch_add		(&val,  1, _tso_atomic_policy) + 1; }
-__always_inline static uint64_t AtomicInc				(volatile uint64_t& val)											{ return __atomic_fetch_add		(&val,  1, _tso_atomic_policy) + 1; }
-__always_inline static uint32_t AtomicDec				(volatile uint32_t& val)											{ return __atomic_fetch_add		(&val, -1, _tso_atomic_policy) - 1; }
-__always_inline static uint64_t AtomicDec				(volatile uint64_t& val)											{ return __atomic_fetch_add		(&val, -1, _tso_atomic_policy) - 1; }
-__always_inline static uint32_t AtomicExchange			(volatile uint32_t& dest, uint32_t src )							{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
-__always_inline static uint64_t AtomicExchange			(volatile uint64_t& dest, uint64_t src )							{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
-__always_inline static uint32_t AtomicExchangeAdd		(volatile uint32_t& src,  uint32_t amount )							{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
-__always_inline static uint64_t AtomicExchangeAdd		(volatile uint64_t& src,  uint64_t amount )							{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
-__always_inline static uint32_t AtomicCompareExchange	(volatile uint32_t& dest, uint32_t exchange, uint32_t comparand )	{ __atomic_compare_exchange_n(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
-__always_inline static uint64_t AtomicCompareExchange	(volatile uint64_t& dest, uint64_t exchange, uint64_t comparand )	{ __atomic_compare_exchange_n(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
+yesinline static uint32_t AtomicInc				(volatile uint32_t& val)											{ return __atomic_fetch_add		(&val,  1, _tso_atomic_policy) + 1; }
+yesinline static uint64_t AtomicInc				(volatile uint64_t& val)											{ return __atomic_fetch_add		(&val,  1, _tso_atomic_policy) + 1; }
+yesinline static uint32_t AtomicDec				(volatile uint32_t& val)											{ return __atomic_fetch_add		(&val, -1, _tso_atomic_policy) - 1; }
+yesinline static uint64_t AtomicDec				(volatile uint64_t& val)											{ return __atomic_fetch_add		(&val, -1, _tso_atomic_policy) - 1; }
+yesinline static uint32_t AtomicExchange			(volatile uint32_t& dest, uint32_t src )							{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
+yesinline static uint64_t AtomicExchange			(volatile uint64_t& dest, uint64_t src )							{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
+yesinline static uint32_t AtomicExchangeAdd		(volatile uint32_t& src,  uint32_t amount )							{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
+yesinline static uint64_t AtomicExchangeAdd		(volatile uint64_t& src,  uint64_t amount )							{ return __atomic_fetch_add		(&src, amount, _tso_atomic_policy); }
+yesinline static uint32_t AtomicCompareExchange	(volatile uint32_t& dest, uint32_t exchange, uint32_t comparand )	{ __atomic_compare_exchange_n(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
+yesinline static uint64_t AtomicCompareExchange	(volatile uint64_t& dest, uint64_t exchange, uint64_t comparand )	{ __atomic_compare_exchange_n(&dest, &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
 
-template<class T> __always_inline static T* AtomicExchangePointer	(T* (&dest), T* src)									{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
-template<class T> __always_inline static T* AtomicExchangePointer	(T* (&dest), std::nullptr_t src)						{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
+template<class T> yesinline static T* AtomicExchangePointer	(T* (&dest), T* src)									{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
+template<class T> yesinline static T* AtomicExchangePointer	(T* (&dest), std::nullptr_t src)						{ return __atomic_exchange_n	(&dest, src, _tso_atomic_policy); }
 
-template<class T> __always_inline static T* AtomicCompareExchangePointer(T* (&dest), T* exchange, T* comparand)			    { __atomic_compare_exchange_n(&dest,      &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
-template<class T> __always_inline static T* AtomicCompareExchangePointer(T* (&dest), T* exchange, std::nullptr_t comparand) { __atomic_compare_exchange_n(&dest, (T**)&comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
+template<class T> yesinline static T* AtomicCompareExchangePointer(T* (&dest), T* exchange, T* comparand)			    { __atomic_compare_exchange_n(&dest,      &comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
+template<class T> yesinline static T* AtomicCompareExchangePointer(T* (&dest), T* exchange, std::nullptr_t comparand) { __atomic_compare_exchange_n(&dest, (T**)&comparand, exchange, 0, _tso_atomic_policy, _tso_atomic_policy); return comparand; }
 
 template< typename T >
-__always_inline T AtomicExchangeEnum( volatile T& dest, T src)
+yesinline T AtomicExchangeEnum( volatile T& dest, T src)
 {
 	return __atomic_exchange_n(&dest, src, _tso_atomic_policy);
 }
 
 template< typename T >
-__always_inline T AtomicCompareExchangeEnum( volatile T& dest, T exchange, T comparand )
+yesinline T AtomicCompareExchangeEnum( volatile T& dest, T exchange, T comparand )
 {
 	__atomic_compare_exchange_n(&dest, &exchange, comparand, 0, _tso_atomic_policy, _tso_atomic_policy);
 	return exchange;
