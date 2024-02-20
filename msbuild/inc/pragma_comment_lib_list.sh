@@ -24,6 +24,9 @@ readarray -t items < <(grep -E "^#pragma comment *\( *lib *, \".*\"\)" | grep -E
     exit 0
 }
 
+# use -d prior to mkdir because it's faster than calling mkdir straight up.
+[[ -d "$1" ]] || mkdir -p "$(dirname $1)"
+
 printf -- '-l%s ' "${items[@]}" > $1 || {
     rm -f $1
     exit 1

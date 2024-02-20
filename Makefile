@@ -145,10 +145,6 @@ OBJECTS += $(SOURCES_C:.c=.o)
 # also exports absolute path to OBDIR for use by sub-make.
 OBJECTS := $(addprefix $(OBJDIR)/, $(OBJECTS))
 
-ifeq ($(NEED_PREPROCESS_PRAGMA_COMMENT_LIB),1)
-    LINK_SWITCH_INPUT_FILES := $(OBJECTS:.o=.link_switch)
-endif
-
 COMPILE.cxx := $(CPPFLAGS) $(CXXFLAGS) $(ASANFLAGS)
 COMPILE.c := $(CPPFLAGS) $(CFLAGS) $(ASANFLAGS)
 
@@ -164,7 +160,6 @@ COMPILE.C   := $(all_includes.macro) $(CPPFLAGS) $(CFLAGS)   $(ASANFLAGS)
 
 $(eval $(call INCR_BUILD_MACRO,.,,CXX))
 $(eval $(call INCR_BUILD_MACRO,.,,C))
-$(eval $(call INCR_BUILD_MACRO,.,,PSSL))
 
 mkobjdir = @[[ -d '$(@D)' ]] || mkdir -p '$(@D)'
 
@@ -175,9 +170,12 @@ mkobjdir = @[[ -d '$(@D)' ]] || mkdir -p '$(@D)'
 
 all: $(TARGET_FULLPATH)
 
-$(TARGET_FULLPATH): PRAGMA_LINK_FLAGS=$(shell cat $(LINK_SWITCH_INPUT_FILES) < /dev/null 2> /dev/null)
-$(TARGET_FULLPATH): $(OBJECTS) $(INCREMENTAL_DEPS.LD) $(LINK_SWITCH_INPUT_FILES)
-:   $(LD) $(OBJECTS) $(LDFLAGS) $(PRAGMA_LINK_FLAGS) $(ASANFLAGS) -o $@ 
+ifeq ($(NEED_PREPROCESS_PRAGMA_COMMENT_LIB),1)
+    include $(LIB_IMPLICIT_STD_DIR)/msbuild/inc/pragma_comment_lib.mk
+endif
+
+$(TARGET_FULLPATH): $(OBJECTS) $(INCREMENTAL_DEPS.LD) $(PRAGMA_LIB_DEPS.LD)
+:   $(LD) $(OBJECTS) $(LDFLAGS) $(ASANFLAGS) -o $@ 
 
 $(OBJDIR)/%.o: %.cpp $(INCREMENTAL_DEPS.CXX)
 :   $(call mkobjdir)
@@ -188,14 +186,6 @@ $(OBJDIR)/%.o: %.c $(INCREMENTAL_DEPS.C)
 :   $(call mkobjdir)
 :   $(CC) -c $< $(COMPILE.C) $(g_incr_flags) -o $@
 :   $(call incr_touch_depfile)
-
-$(OBJDIR)/%.link_switch: %.cpp $(INCREMENTAL_DEPS.CXX)
-:@  $(call mkobjdir)
-:@  $(CXX) -E $< $(all_includes.macro) $(CPPFLAGS) | $(LIB_IMPLICIT_STD_DIR)/msbuild/inc/pragma_comment_lib_list.sh $@
-
-$(OBJDIR)/%.link_switch: %.c $(INCREMENTAL_DEPS.C)
-:@  $(call mkobjdir)
-:@  $(CC) -E $< $(all_includes.macro) $(CPPFLAGS) | $(LIB_IMPLICIT_STD_DIR)/msbuild/inc/pragma_comment_lib_list.sh $@
 
 
 # used for (and by) Visual studio IDE
