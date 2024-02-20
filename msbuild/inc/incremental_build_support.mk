@@ -1,7 +1,7 @@
 # incremental-build-support.mk
 #
 # Input Requirements
-#   OBJECTS - must be fully defined prior to inclusion, to allow for correct rules definitions.
+#   INCREMENTAL - must be fully defined prior to inclusion, to allow for correct rules definitions.
 #
 # Output Definitions:
 #   g_incr_flags - pass this into the compiler!
@@ -14,15 +14,23 @@
 #       $(CXX) -c $< all the stuff ...
 #       $(call incr_touch_depfile)
 
-m_mydir := $(dir $(realpath -m $(lastword $(MAKEFILE_LIST))))
+m_incr_mydir := $(dir $(realpath -m $(lastword $(MAKEFILE_LIST))))
 
 # only works on make 4.4 or newer.
-#export PATH := $(abspath $(m_mydir)):$(PATH)
+#export PATH := $(abspath $(m_incr_mydir)):$(PATH)
 
 # enable incremental builds (checks header dependencies)
 # incr=1 is provided as a familiar shorthand on the make CLI.
 incr ?= 1
 INCREMENTAL ?= $(incr)
+
+# set this to -MD for full system file dependency checks.
+# this will add a lot of overhead to gnu makefile startup, especially on very large projects, and is only
+# useful if your workflow involves modifying system header files frequently. Note that -MD does not generally
+# work for compiler version changwes. A full clean build will still be required to aovid spurious errors.
+# For that reason, default to -MMD to favor performance.
+INCREMENTAL_MODE_SWITCH ?= -MMD
+
 
 ifeq ($(INCREMENTAL),1)
     # incr_touch_depfile: clang on msys2 writes the dep (.d) file after writing the object file, which tricks make
@@ -31,7 +39,7 @@ ifeq ($(INCREMENTAL),1)
     # TODO: this might only be needed on MSYS2, maybe try NOP'ing it on linux later...
     incr_touch_depfile = @touch --reference=$@ $(basename $@).d || :
 
-    g_incr_flags   = -MT $@ -MD -MP -MF $(basename $@).d
+    g_incr_flags   = -MT $@ $(INCREMENTAL_MODE_SWITCH) -MP -MF $(basename $@).d
     m_incr_files   = $(addsuffix .d,$(basename $(OBJECTS)))
 endif
 
@@ -68,7 +76,7 @@ ifeq ($(INCREMENTAL),1)
     export tmp_makeincr_COMPILE  := $($(3)) $$($$(m_local_subvar)COMPILE.$(3))
     m_local_objdir  := $$(shell realpath -m --relative-to=$$$$(pwd) $$(OBJDIR)/$$(m_local_subdir))
     m_compile_file  := $$(m_local_objdir)/compile_flags.$(3)
-    null := $$(shell $$(m_mydir)/incremental_update_compile_flags.sh $$(m_compile_file))
+    null := $$(shell $$(m_incr_mydir)/incremental_update_compile_flags.sh $$(m_compile_file))
     ifeq ($(3),LD)
         $$(m_local_subvar)INCREMENTAL_DEPS.$(3) := $$(m_compile_file)
     else
@@ -76,13 +84,3 @@ ifeq ($(INCREMENTAL),1)
     endif
     endef
 endif
-
-
-#m_link_incr_file  := $(OBJDIR)/linker_ldflags
-#ifneq ($(LDFLAGS),)
-#    export LDFLAGS
-#    m_hash_linker  = $(shell sha256sum <<< "$$LDFLAGS" | cut -c-64)
-#    ifeq ($(shell cmp -s $(m_link_incr_file) <(echo "$(m_hash_linker)") || echo 1),1)
-#        null := $(shell rm -f $(m_link_incr_file))
-#    endif
-#endif
