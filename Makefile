@@ -171,7 +171,7 @@ mkobjdir = @[[ -d '$(@D)' ]] || mkdir -p '$(@D)'
 all: $(TARGET_FULLPATH)
 
 ifeq ($(NEED_PREPROCESS_PRAGMA_COMMENT_LIB),1)
-    include $(LIB_IMPLICIT_STD_DIR)/msbuild/inc/preprocess_pragma_comment_lib.rules.mk
+    include $(LIB_IMPLICIT_STD_DIR)/msbuild/inc/pragma_comment_lib.mk
 endif
 
 $(TARGET_FULLPATH): $(OBJECTS) $(INCREMENTAL_DEPS.LD) $(PRAGMA_LIB_DEPS.LD)
