@@ -69,13 +69,6 @@
 #	define __immdebug					__declspec(dllexport)		// expose for VS immediate debug window use
 #	define __retain_used				__declspec(dllexport)
 
-#	if __cplusplus
-#		define __unused						[[maybe_unused]]
-#		define __debugvar					[[maybe_unused]]			// alias for __unused, indicates intent more clearly in some cases.
-#	else
-#		define __unused						// msc has no unused equivalnt in C or __Declspec
-#		define __debugvar					// msc has no unused equivalnt in C or __Declspec
-#	endif
 
 #	if __cplusplus > 201704
 #		define __msvc_always_inline			[[msvc::forceinline]]
@@ -98,8 +91,6 @@
 #   define __ctor_inline				yesinline
 #	define __immdebug					[[gnu::used, gnu::retain]]	// expose for VS immediate debug window use
 #	define __retain_used				[[gnu::used, gnu::retain]]
-#   define __unused                     [[maybe_unused]]
-#	define __debugvar					[[maybe_unused]]			// alias for __unused, indicates intent more clearly in some cases.
 
 #	if !PLATFORM_SCE
 #		define __noinline 				__attribute__((__noinline__))
@@ -118,6 +109,20 @@
 #		define __va_inline 					yesinline
 #	endif
 #endif
+
+// FreeBSD defines its own version of __unused using gcc attribute
+#if !defined(__FreeBSD__) || COMPILER_MSC
+#	if __cplusplus
+#		define __unused						[[maybe_unused]]
+#	elif COMPILER_MSC
+#		define __unused						// msc has no unused equivalnt in C or __Declspec
+#	else	// assume clang or gcc compat
+#		define __unused						__attribute__((__unused__))
+#	endif
+#endif
+
+// alias for __unused, indicates intent more clearly in some cases.
+#define __debugvar	__unused
 
 // __builtin_expect is too clumsy to use as a regular keyword in practical use cases, so rather than define a
 // version of it for Microsoft, define expect_true/expect_false macros instead.
