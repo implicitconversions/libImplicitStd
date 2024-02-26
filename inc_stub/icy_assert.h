@@ -8,10 +8,10 @@
 /*
 #include "my-assertions.h"
 
-#define dbg_check(cond, ...)     (my_assert( cond, ## __VA_ARGS ))
-#define house_check(cond, ...)   (my_assert( cond, ## __VA_ARGS ))
+#define assertD(cond, ...)     (my_assert( cond, ## __VA_ARGS ))
+#define assertH(cond, ...)     (my_assert( cond, ## __VA_ARGS ))
 
-#define app_abort(...)           (my_abort ( ## __VA_ARGS__ ))
+#define app_abort(...)         (my_abort ( ## __VA_ARGS__ ))
 */
 
 #include <cstdlib>      // for abort()
@@ -20,21 +20,24 @@
 #include "MacroUtil.h"
 #include "icyAppErrorCallback.h"
 
+
 #if !defined(ENABLE_DEBUG_CHECKS)
 #	define ENABLE_DEBUG_CHECKS		(1)
 #endif
 
+// ENABLE_HOUSE_CHECKS: turns on inhouse assertion checks (semi-popular game studio nomenclature, refers
+// to builds for internal development and QA, usually less aggressively checked than debug but not entirely
+// without any assertions at all.
 #if !defined(ENABLE_HOUSE_CHECKS)
-#	define ENABLE_HOUSE_CHECKS		(1)
+#	define ENABLE_HOUSE_CHECKS		(ENABLE_DEBUG_CHECKS)
 #endif
-
 
 
 // Implementation Note: DO NOT EXPAND 'cond' INTO assertFmtR. This causes full expansion of the condition,
 // and if it's a macro it'll end up being potentially several lines of C code after macro expansion.
 
 #if !defined(assertFmtR)
-#	define assertFmtR(cond, condStr, filepos, ...)		((cond) || (libimplicit_app_report_error(filepos, condStr, ## __VA_ARGS__, nullptr ) && (abort(),0)))
+#	define assertFmtR(cond, filepos, condStr, ...)		((cond) || (libimplicit_app_report_error(filepos, condStr, ## __VA_ARGS__, nullptr ) && (abort(),0)))
 #endif
 
 
@@ -64,7 +67,7 @@
 #endif
 
 #if ENABLE_HOUSE_CHECKS
-#	define icyReportError(...)			assertFmtR(false, __ICY_FILEPOS__, "ReportError" __VA_ARGS__ ), 0
+#	define icyReportError(...)			assertFmtR(false, __ICY_FILEPOS__, "ReportError", __VA_ARGS__ ), 0
 #else
 #	define icyReportError(...)			(libimplicit_app_report_error(__ICY_FILEPOS__, "ReportError", __VA_ARGS__ ))
 #endif
