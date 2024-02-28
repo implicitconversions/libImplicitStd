@@ -6,6 +6,10 @@
 #	include "fi-platform-defines-sce.h"
 #endif
 
+#if __has_include("fi-platform-defines-nx.h")
+#	include "fi-platform-defines-nx.h"
+#endif
+
 // Default selection of MSW platform is based on the _WIN32 define being provided by compiler.
 // This is not a foolproof assumption, but a special environment can specify these defines
 // explicitly via makefile.
@@ -25,19 +29,19 @@
 
 #if !defined(PLATFORM_POSIX)
 #	if PLATFORM_MSW
-#		define PLATFORM_POSIX 0
+#		define PLATFORM_POSIX 	0
 #	elif __has_include(<unistd.h>)
-#		define PLATFORM_POSIX 1
+#		define PLATFORM_POSIX 	1
 #	else
-#		define PLATFORM_POSIX 0
+#		define PLATFORM_POSIX 	0
 #	endif
 #endif
 
 #if !defined(PLATFORM_LINUX)
 #   ifdef __linux__
-#		define PLATFORM_LINUX 1
+#		define PLATFORM_LINUX 	1
 #	else
-#		define PLATFORM_LINUX 0
+#		define PLATFORM_LINUX 	0
 #	endif
 #endif
 

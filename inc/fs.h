@@ -11,7 +11,11 @@
 #endif
 
 #if !defined(FILESYSTEM_NEEDS_OS_PATH)
-#	define FILESYSTEM_NEEDS_OS_PATH		(PLATFORM_SCE || PLATFORM_MSW)
+#	if PLATFORM_LINUX || PLATFORM_OSX
+#		define FILESYSTEM_NEEDS_OS_PATH		(0)
+#	else
+#		define FILESYSTEM_NEEDS_OS_PATH		(1)
+#	endif
 #endif
 
 namespace fs {
@@ -56,7 +60,7 @@ class path
 {
 protected:
 	std::string		uni_path_;			// universal path, path separators are forward slashes only (may include platform prefixes)
-#if PLATFORM_SCE || PLATFORM_MSW
+#if FILESYSTEM_NEEDS_OS_PATH
 	std::string		libc_path_;			// native path expected by libc and such
 #endif
 
