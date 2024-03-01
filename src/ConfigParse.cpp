@@ -107,6 +107,9 @@ extern char const* ConfigParseSingleArg(char const* input, char const *lvalue, i
 		if (input[lvalue_length] == '=') {
 			return input + lvalue_length + 1;
 		}
+		else {
+			log_error("CLI: expected assignment (=) for %s", input);
+		}
 	}
 	return nullptr;
 }
@@ -123,11 +126,19 @@ void ConfigParseArgs(int argc, const char* const argv[], char const* prefix, con
 	std::string lvalue;
 	std::string rvalue;
 
+	bool end_of_options = 0;
+
 	for (int i=0; i<argc; ++i) {
 		const char* arg = argv[i];
 		if (!arg[0]) continue;
-		if (prefix && prefix[0] && !StringUtil::BeginsWith(arg, prefix)) {
-			// do not trim any whitespace, this is a positional parameter (not an argument or switch)
+
+		if (prefix && (strcmp(arg, prefix)==0)) {
+			// rest of the CLI is positional args.
+			end_of_options = 1;
+			continue;
+		}
+
+		if (end_of_options) {
 			push_item({}, arg);
 			continue;
 		}
@@ -139,6 +150,7 @@ void ConfigParseArgs(int argc, const char* const argv[], char const* prefix, con
 			lvalue += arg[ci++];
 		}
 
+		// anything with an assignment (equals) is considered a valid KVP unless it occurs after end_of_options.
 		if (arg[ci] == '=') {
 			rvalue = &arg[ci+1];
 		}
@@ -149,7 +161,7 @@ void ConfigParseArgs(int argc, const char* const argv[], char const* prefix, con
 				rvalue = argv[i+1];
 			}
 			else {
-			// no assignment operator? treat this as a positional parameter (not an argument or switch)
+				// no assignment operator? treat this as a positional parameter (not an argument or switch)
 				push_item({}, arg);
 			}
 		}
