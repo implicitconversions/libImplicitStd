@@ -113,6 +113,8 @@ ifeq ($(platform), msw)  # msw from mingw or clang64 prompt (MSYS2)
     ifeq ($(WANT_SYMBOLS), 1)
         CXXFLAGS += -gcodeview
         CFLAGS   += -gcodeview
+        LDFLAGS  += -g -fuse-ld=lld -Wl,--pdb=
+
     endif
 else ifeq ($(platform), osx)
     OSLBL = OSX

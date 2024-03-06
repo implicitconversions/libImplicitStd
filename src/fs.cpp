@@ -1,5 +1,6 @@
 
 #include <string>
+#include <set>
 
 #include "icy_log.h"
 #include "icy_assert.h"
@@ -74,7 +75,7 @@ bool IsMswPathSep(char c)
 }
 
 // intended for use on fullpaths which have already had host prefixes removed.
-std::string ConvertFromMsw(const std::string& origPath)
+std::string ConvertFromMsw(const std::string& origPath, int maxMountLength)
 {
 	std::string result;
 
@@ -99,7 +100,7 @@ std::string ConvertFromMsw(const std::string& origPath)
 	}
 
 	// max output length is original length plus drive specifier, eg. /c  (two letters)
-	result.resize(origPath.length() + 2);
+	result.resize(origPath.length() + 3);
 	const char* src = origPath.c_str();
 		  char* dst = &result[0];
 
@@ -115,33 +116,51 @@ std::string ConvertFromMsw(const std::string& origPath)
 	// it is very difficult to port logic that somehow relies on this feature.  In the interest
 	// of cross-platform support, we detect this and throw a hard error rather than try to support it.
 
-	if (isalnum((uint8_t)src[0]) && src[1] == ':') {
-		dst[0] = '/';
-		dst[1] = tolower(src[0]);
+	if (maxMountLength == 1) {
+		if (isalnum((uint8_t)src[0]) && src[1] == ':') {
+			dst[0] = '/';
+			dst[1] = tolower(src[0]);
 
-		// early-exit to to allow `c:` -> `/c`
-		// this conversion might be useful for internal path parsing and is an unlikely source of user error.
+			// early-exit to to allow `c:` -> `/c`
+			// this conversion might be useful for internal path parsing and is an unlikely source of user error.
 
-		if (!src[2]) {
-			return result;
+			if (!src[2]) {
+				return result;
+			}
+
+			//house_check (IsMswPathSep(src[2]),
+			//	"Invalid msw-specific non-rooted path with drive letter: %s\n\n"
+			//	"Non-rooted paths of this type are not supported to non-standard\n"
+			//	"and non-portable nature of the specification.\n",
+			//	origPath.c_str()
+			//);
+
+			src  += 2;
+			dst  += 2;
+		}
+	}
+	elif (strchr(src, ':')) {
+		// found a colon. Rewrite the path.
+		*dst++ = '/';
+		while (src[0] && src[0] != ':') {
+			*dst++ = *src++;
 		}
 
-		//house_check (IsMswPathSep(src[2]),
-		//	"Invalid msw-specific non-rooted path with drive letter: %s\n\n"
-		//	"Non-rooted paths of this type are not supported to non-standard\n"
-		//	"and non-portable nature of the specification.\n",
-		//	origPath.c_str()
-		//);
-
-		src  += 2;
-		dst  += 2;
+		// early-exit to to allow `rom:` -> `/rom`
+		// this conversion might be useful for internal path parsing and is an unlikely source of user error.
+		if (!src) {
+			return result;
+		}
+		++src; // advance past colon.
+		src += (src[0] == '/' || src[0] == '\\');
+		*dst++ = '/';
 	}
 
 	// - a path that starts with a single backslash is always rejected.
 	// - a path that starts with a single forward slash is only rejected if it doesn't _look_ like a
 	//   drive letter spec.
 	//       /c/woombey/to  <-- OK!
-	//       /woombey/to    <-- not good.
+	//       /woombey/to    <-- OK only if (maxMountLength > 1)
 
 	elif (src[0] == '\\') {
 		if (src[0] == src[1]) {
@@ -150,7 +169,7 @@ std::string ConvertFromMsw(const std::string& origPath)
 		else {
 			fprintf( stderr, "Invalid path layout: %s\n"
 				"Rooted paths without drive specification are not allowed.\n"
-				"Please explicitly specify the drive letter in the path.",
+				"Please explicitly specify the drive letter in the path.\n",
 				origPath.c_str()
 			);
 			return {};
@@ -160,19 +179,6 @@ std::string ConvertFromMsw(const std::string& origPath)
 		if (src[0] == src[1]) {
 			// network name URI, don't do anything (regular slash conversion is OK)
 		}
-		else {
-			// allow format /c or /c/ and nothing else:
-			// note that windows itself only allows a-z and 0-9 so isalnum() works for us
-			// since it will also reject any unicode chars (which is what we want).
-			if (!isalnum((uint8_t)src[1]) || (src[2] && src[2] != '/')) {
-				fprintf( stderr, "Invalid path layout: %s\n"
-					"Rooted paths without drive specification are not allowed.\n"
-					"Please explicitly specify the drive letter in the path.",
-					origPath.c_str()
-				);
-				return {};
-			}
-		}
 	}
 
 	// copy rest of the string char for char, replacing '\\' with '/'
@@ -180,12 +186,14 @@ std::string ConvertFromMsw(const std::string& origPath)
 		dst[0] = (src[0] == '\\') ? '/' : src[0];
 	}
 	dst[0] = 0;
+	assertD((dst - &result[0]) < result.size(), "Original=%s result=%s", origPath.c_str(), result.c_str());
 	result.resize(dst - &result[0]);
 	return result;
 }
 
 // intended for use on fullpaths which have already had host prefixes removed.
-std::string ConvertToMsw(const std::string& unix_path)
+template<bool MixedMode>
+std::string _tmpl_ConvertToMsw(const std::string& unix_path, int maxMountLength)
 {
 	if (unix_path.empty()) {
 		return {};
@@ -219,14 +227,28 @@ std::string ConvertToMsw(const std::string& unix_path)
 		src  += 2;
 		dst  += 2;
 	}
-	else if (src[0] == '.' && (src[1] == '\\' || src[1] == '/')) {
+	else if (src[0] == '.' && (src[1] == '/')) {
 		// relative to current dir, just strip the ".\"
 		src += 2;
 	}
 	else if (src[0] == '/') {
+		// treat /cwd/ in a special way - it gets replaced with s_app0_dir
 		if (StringUtil::BeginsWith(unix_path, "/cwd/")) {
 			src += 5;
 			is_cwd = 1;
+		}
+		elif (auto slash = unix_path.find_first_of('/', 1); slash < maxMountLength) {
+			// found a slash within the length limit.
+			// convert into a mount name prefix.
+			++src;
+			while (src[0] && src[0] != '/') {
+				*dst++ = *src++;
+			}
+			*dst++ = ':';
+			if (src[0] == '/') {
+				*dst++ = MixedMode ? '/' : '\\';
+				++src;
+			}
 		}
 		else {
 			is_special_root = 1;
@@ -240,9 +262,17 @@ std::string ConvertToMsw(const std::string& unix_path)
 		dst[0] = 0;
 	}
 	else {
-		// copy rest of the string char for char, replacing '/' with '\\'
-		for(; src[0]; ++src, ++dst) {
-			dst[0] = (src[0] == '/') ? '\\' : src[0];
+		if constexpr (MixedMode) {
+			// copy rest of the string char for char (mixed mode keeps forward slashes)
+			for(; src[0]; ++src, ++dst) {
+				dst[0] = src[0];
+			}
+		}
+		else {
+			// copy rest of the string char for char, replacing '/' with '\\'
+			for(; src[0]; ++src, ++dst) {
+				dst[0] = (src[0] == '/') ? '\\' : src[0];
+			}
 		}
 		dst[0] = 0;
 	}
@@ -290,6 +320,34 @@ path& path::concat(const std::string& src)
 	libc_path_ += src;
 #endif
 	return *this;
+}
+
+static constexpr bool MIXED_MODE = true;
+static constexpr bool NATIVE_MODE = true;
+
+std::string ConvertToMsw(const std::string& unix_path) {
+
+	return _tmpl_ConvertToMsw<true>(unix_path, FILESYSTEM_MOUNT_NAME_LENGTH);
+}
+
+std::string ConvertToMsw(const std::string& unix_path, int maxMountLength) {
+	return _tmpl_ConvertToMsw<true>(unix_path, maxMountLength);
+}
+
+std::string ConvertToMswNative(const std::string& unix_path) {
+	return _tmpl_ConvertToMsw<NATIVE_MODE>(unix_path, FILESYSTEM_MOUNT_NAME_LENGTH);
+}
+
+std::string ConvertToMswNative(const std::string& unix_path, int maxMountLength) {
+	return _tmpl_ConvertToMsw<NATIVE_MODE>(unix_path, maxMountLength);
+}
+
+std::string ConvertToMswMixed(const std::string& unix_path) {
+	return _tmpl_ConvertToMsw<MIXED_MODE>(unix_path, FILESYSTEM_MOUNT_NAME_LENGTH);
+}
+
+std::string ConvertToMswMixed(const std::string& unix_path, int maxMountLength) {
+	return _tmpl_ConvertToMsw<MIXED_MODE>(unix_path, maxMountLength);
 }
 
 }

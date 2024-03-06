@@ -423,11 +423,6 @@ void msw_InitAbortBehavior() {
 	// (_WRITE_ABORT_MSG is established later, according to unattended mode settings)
 	_set_abort_behavior(0, _CALL_REPORTFAULT);
 
-#if !defined(_DEBUG)
-	typedef void (*SignalHandlerPointer)(int);
-	auto previousHandler = signal(SIGABRT, SignalHandler);
-#endif
-
 	// Tell the system not to display the critical-error-handler message box.
 	// from msdn: Best practice is that all applications call the process-wide SetErrorMode function
 	//     with a parameter of SEM_FAILCRITICALERRORS at startup. This is to prevent error mode dialogs
