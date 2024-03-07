@@ -11,7 +11,29 @@
 #endif
 
 #if !defined(FILESYSTEM_NEEDS_OS_PATH)
-#	define FILESYSTEM_NEEDS_OS_PATH		(PLATFORM_SCE || PLATFORM_MSW)
+#	if PLATFORM_LINUX || PLATFORM_OSX
+#		define FILESYSTEM_NEEDS_OS_PATH		(0)
+#	else
+#		define FILESYSTEM_NEEDS_OS_PATH		(1)
+#	endif
+#endif
+
+// Mount length describes the number of characters allowed prior to the colon, ex:
+//    prefix:/path/to/file
+//    ^^^^^^  length=6
+// Windows (msw) mount length is generally considered one character. Some special platforms (android)
+// may have longer mounts. Unix style systems ignore this setting.
+#if !defined(FILESYSTEM_MOUNT_NAME_LENGTH)
+#	define FILESYSTEM_MOUNT_NAME_LENGTH     (1)
+#endif
+
+// FILESYSTEM_MSW_MIXED_MODE - selects mixed mode paths, which use forward slash instead of backslash. Broadly, 
+// windows apps have graduated to a point of supporting mixed-mode paths in all but the most extreme legacy app
+// situations (such as pathname parsing by `cmd.exe` and `start.exe`). In some cases mixed mode paths may parse
+// more reliably than legacy native style paths using backslash. For this reason, forward slash is now preferred
+// as the default path resolution mode.
+#if !defined(FILESYSTEM_MSW_MIXED_MODE)
+#	define FILESYSTEM_MSW_MIXED_MODE        (1)
 #endif
 
 namespace fs {
@@ -25,8 +47,13 @@ struct ReadSeekInterface {
 class path;
 
 bool		IsMswPathSep		(char c);
-std::string ConvertFromMsw		(const std::string& msw_path);
+std::string ConvertFromMsw		(const std::string& msw_path, int maxMountLength=FILESYSTEM_MOUNT_NAME_LENGTH);
+std::string ConvertToMsw		(const std::string& unix_path, int maxMountLength);
+std::string ConvertToMswNative  (const std::string& unix_path, int maxMountLength);
+std::string ConvertToMswMixed	(const std::string& unix_path, int maxMountLength);
 std::string ConvertToMsw		(const std::string& unix_path);
+std::string ConvertToMswNative	(const std::string& unix_path);
+std::string ConvertToMswMixed	(const std::string& unix_path);
 std::string PathFromString		(const char* path);
 
 bool		exists				(const path& path);
@@ -56,7 +83,7 @@ class path
 {
 protected:
 	std::string		uni_path_;			// universal path, path separators are forward slashes only (may include platform prefixes)
-#if PLATFORM_SCE || PLATFORM_MSW
+#if FILESYSTEM_NEEDS_OS_PATH
 	std::string		libc_path_;			// native path expected by libc and such
 #endif
 

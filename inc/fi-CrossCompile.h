@@ -55,11 +55,11 @@
 // yesinline explained:
 //   can't use __always_inline because glibc hijacked it and broke it by defining it as "inline __attribute__((__always_inline__))"
 //   instead of just the attribute, thereby mixing two entirely different directives (one for the TU and one for the optimizer)
-//   into one statement. This becomes a big problem when using LTO, which by deifnition allows us to do inline optimization 
+//   into one statement. This becomes a big problem when using LTO, which by deifnition allows us to do inline optimization
 //   across modules without having to use the C++ `inline` keyword and include them into all TUs.
 
 // Help MSVC Conform to the GCC/Clang way of doing things.
-#if defined(COMPILER_MSC)
+#if COMPILER_MSC
 
 #	define __builtin_bswap32(a)			_byteswap_ulong(a)
 #	define __builtin_unreachable()		__assume(0)
@@ -69,13 +69,6 @@
 #	define __immdebug					__declspec(dllexport)		// expose for VS immediate debug window use
 #	define __retain_used				__declspec(dllexport)
 
-#	if __cplusplus
-#		define __unused						[[maybe_unused]]
-#		define __debugvar					[[maybe_unused]]			// alias for __unused, indicates intent more clearly in some cases.
-#	else
-#		define __unused						// msc has no unused equivalnt in C or __Declspec
-#		define __debugvar					// msc has no unused equivalnt in C or __Declspec
-#	endif
 
 #	if __cplusplus > 201704
 #		define __msvc_always_inline			[[msvc::forceinline]]
@@ -98,8 +91,6 @@
 #   define __ctor_inline				yesinline
 #	define __immdebug					[[gnu::used, gnu::retain]]	// expose for VS immediate debug window use
 #	define __retain_used				[[gnu::used, gnu::retain]]
-#   define __unused                     [[maybe_unused]]
-#	define __debugvar					[[maybe_unused]]			// alias for __unused, indicates intent more clearly in some cases.
 
 #	if !PLATFORM_SCE
 #		define __noinline 				__attribute__((__noinline__))
@@ -119,11 +110,25 @@
 #	endif
 #endif
 
+// FreeBSD defines its own version of __unused using gcc attribute
+#if !defined(__FreeBSD__) || COMPILER_MSC
+#	if __cplusplus
+#		define __unused						[[maybe_unused]]
+#	elif COMPILER_MSC
+#		define __unused						// msc has no unused equivalnt in C or __Declspec
+#	else	// assume clang or gcc compat
+#		define __unused						__attribute__((__unused__))
+#	endif
+#endif
+
+// alias for __unused, indicates intent more clearly in some cases.
+#define __debugvar	__unused
+
 // __builtin_expect is too clumsy to use as a regular keyword in practical use cases, so rather than define a
 // version of it for Microsoft, define expect_true/expect_false macros instead.
 // NOTE: The return value of __builtin_expect is the return value of the expression. Use explicit typecast to bool
 //       to ensure the result is consistent acorss compilers.
-#if defined(COMPILER_MSC)
+#if COMPILER_MSC
 #  define expect_true(expr)     ((bool)(expr))
 #  define expect_false(expr)    ((bool)(expr))
 #else
@@ -135,17 +140,17 @@
 // docs as the preferred way to work around the annoying design restrictions of _Pragma(). It essentially makes
 // the C99 _Pragma feature behave just like the Microsoft __pragma feature, therefore I've named it accordingly
 // and inject it only when compiling on a toolchain that lacks __pragma. This simplifies MSVC/Clang interop.
-#if !defined(COMPILER_MSC)
+#if !COMPILER_MSC
 #	define __pragma(x)     _Pragma (#x)
 #endif
 
 // Slightly less annoying way to deal with MSVC's lack of an equivalent to GCC/Clang __attribute__((packed)).
 // Note that we do not need to specify alignas(1), but if we do it hints MSVC to produce compiler warnings
 // anytime the packing isn't working the way we expect.
-#if defined(COMPILER_MSC)
+#if COMPILER_MSC
 #	define __PACKED(...)  __pragma(pack(push,1)) __VA_ARGS__ alignas(1) __pragma(pack(pop))
 #else
-#   define __packed __attribute__((packed))
+#   define __packed __attribute__((__packed__))
 #	define __PACKED(...)  __VA_ARGS__ __packed
 #endif
 
@@ -161,13 +166,13 @@
 #   define __cachelined
 #endif
 
-#if defined(COMPILER_MSC)
+#if COMPILER_MSC
 #	define __selectany __declspec(selectany)
 #else
 #	define __selectany
 #endif
 
-#if defined(COMPILER_MSC)
+#if COMPILER_MSC
 #	define __verify_fmt(fmtpos, vapos)
 #else
 #	define __verify_fmt(fmtpos, vapos)  __attribute__ ((format (printf, fmtpos, vapos)))
@@ -181,7 +186,7 @@
 //   Ironically, trying to reduce warning spam on one compiler will cause added warning spam on
 //   another compiler in the form of "unsupported pragma directive", so provide some helper macros
 //   to expedite local-scope warning disabling without adding warings to other compilers.
-#if defined(COMPILER_MSC)
+#if COMPILER_MSC
 #	define TU_DEBUGGABLE	__pragma(optimize("", off))
 #elif defined(__clang__)
 	// [jstine 2022] clang will spam warnings about ignored attributes around yesinline. We don't want to turn this

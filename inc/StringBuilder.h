@@ -69,6 +69,10 @@ public:
 	StringBuilderTrunc& format   (const char* fmt, ...)          __verify_fmt(2,3);
 	StringBuilderTrunc& append   (char c);
 
+	intmax_t size() const {
+		return wpos;
+	}
+
 	char const* c_str() const {
 		return buffer;
 	}
@@ -78,7 +82,7 @@ public:
 // StringBuilder
 //
 // Uses a local buffer for formatting short strings. Falls back to HEAP for large strings.
-// 
+//
 // This is considered a mission-critical string formatting facility. Avoids heap alloc for the
 // common-case strings under a specified length. This class is intended to remain simple and free
 // of feature creep. Other mission critical components such as the logging facility depend on it.
@@ -111,6 +115,10 @@ public:
 	StringBuilder& appendf  (const char* fmt, ...)          __verify_fmt(2,3);
 	StringBuilder& format   (const char* fmt, ...)          __verify_fmt(2,3);
 	StringBuilder& append   (char c);
+
+	intmax_t size() const {
+		return wpos;
+	}
 
 	char const* c_str() const {
 		return longbuf ? longbuf->c_str() : buffer;

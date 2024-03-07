@@ -84,6 +84,33 @@ static const char* path_rel_inputs[] = {
     "./ex why/zee"              ,
 };
 
+// for confirming behavior on filesystems that natively support mount paths longer than one character.
+static const char* path_absmount_inputs[] = {
+    "/rom/"                             ,
+    "/rom/one"                          ,
+    "/rom/one"                          ,
+    "/rom/one\\two\\three"              ,
+    "/root/one\\..\\one\\two\\three"    ,
+    "/root/one\\../one/two\\three"      ,
+    "/root/one/two\\three"              ,
+    "/dev/null"                         ,
+
+    "rom"                                 ,
+    "rom:"                                ,
+    "rom:\\"                              ,
+    "rom:/"                               ,
+    "rom:\\one"                           ,
+    "rom:\\one\\"                         ,
+    "rom:/one"                            ,
+    "rom:/one/"                           ,
+    "rom:\\one two"                       ,
+    "rom:\\one\\two\\three"               ,
+    "rom:\\one two\\three"                ,
+    "rom:\\one\\..\\one\\two\\three"      ,
+    "rom:\\one\\../one/two\\three"        ,
+    "rom:/one/two\\three"                 ,
+};
+
 int main(int argc, char** argv) {
 
 	msw_AllocConsoleForWindowedApp();
@@ -128,9 +155,9 @@ int main(int argc, char** argv) {
     printf("--------------------------------------\n");
     printf("TEST:FILESYSTEM:ABSOLUTE\n");
     for(const auto* item : path_abs_inputs) {
+        printf("input  = %s\n", item);
         auto abs_part = (fs::path)item;
         auto msw_path = fs::ConvertToMsw(item);
-        printf("input  = %s\n", item);
         printf("uni    = %s\n", abs_part.uni_string().c_str());
         printf("msw    = %s\n", msw_path.c_str());
         printf("native = %s\n", abs_part.c_str());
@@ -140,11 +167,11 @@ int main(int argc, char** argv) {
     printf("TEST:FILESYSTEM:ABSOLUTE_CONCAT_ABS\n");
     for(const auto* itemA : path_abs_inputs) {
         for(const auto* itemB : path_abs_inputs) {
-            auto concatenated = (fs::path)itemA / itemB;
             printf("inputA = %s\n", itemA);
             printf("inputB = %s\n", itemB);
+            auto concatenated = (fs::path)itemA / itemB;
             printf("uni    = %s\n", concatenated.uni_string().c_str());
-            printf("native = %s\n", concatenated.c_str());            
+            printf("native = %s\n", concatenated.c_str());
             printf("\n");
         }
     }
@@ -152,11 +179,11 @@ int main(int argc, char** argv) {
     printf("TEST:FILESYSTEM:ABSOLUTE_CONCAT_REL\n");
     for(const auto* itemA : path_abs_inputs) {
         for(const auto* itemB : path_rel_inputs) {
-            auto concatenated = (fs::path)itemA / itemB;
             printf("inputA = %s\n", itemA);
             printf("inputB = %s\n", itemB);
+            auto concatenated = (fs::path)itemA / itemB;
             printf("uni    = %s\n", concatenated.uni_string().c_str());
-            printf("native = %s\n", concatenated.c_str());            
+            printf("native = %s\n", concatenated.c_str());
             printf("\n");
         }
     }
@@ -165,11 +192,11 @@ int main(int argc, char** argv) {
     printf("TEST:FILESYSTEM:REL_CONCAT_ABS\n");
     for(const auto* itemA : path_rel_inputs) {
         for(const auto* itemB : path_abs_inputs) {
-            auto concatenated = (fs::path)itemA / itemB;
             printf("inputA = %s\n", itemA);
             printf("inputB = %s\n", itemB);
+            auto concatenated = (fs::path)itemA / itemB;
             printf("uni    = %s\n", concatenated.uni_string().c_str());
-            printf("native = %s\n", concatenated.c_str());            
+            printf("native = %s\n", concatenated.c_str());
             printf("\n");
         }
     }
@@ -177,14 +204,27 @@ int main(int argc, char** argv) {
     printf("TEST:FILESYSTEM:REL_CONCAT_REL\n");
     for(const auto* itemA : path_rel_inputs) {
         for(const auto* itemB : path_rel_inputs) {
-            auto concatenated = (fs::path)itemA / itemB;
             printf("inputA = %s\n", itemA);
             printf("inputB = %s\n", itemB);
+            auto concatenated = (fs::path)itemA / itemB;
             printf("uni    = %s\n", concatenated.uni_string().c_str());
-            printf("native = %s\n", concatenated.c_str());            
+            printf("native = %s\n", concatenated.c_str());
             printf("\n");
         }
     }
+
+	//__debugbreak();
+    printf("--------------------------------------\n");
+    printf("TEST:FILESYSTEM:ConvertFromMsw(mountLength=15)\n");
+    for(const auto* itemA : path_absmount_inputs) {
+        printf("input  = %s\n", itemA);
+		auto unipath = fs::ConvertFromMsw(itemA, 15);
+		auto native  = fs::ConvertToMswMixed(unipath.c_str(), 15);
+		printf("uni    = %s\n", unipath.c_str());
+        printf("native = %s\n", native.c_str());
+        printf("\n");
+    }
+
     printf("--------------------------------------\n");
     printf("END OF TEST LOG\n");
 
