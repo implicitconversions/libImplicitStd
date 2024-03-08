@@ -27,7 +27,7 @@
 #	define FILESYSTEM_MOUNT_NAME_LENGTH     (1)
 #endif
 
-// FILESYSTEM_MSW_MIXED_MODE - selects mixed mode paths, which use forward slash instead of backslash. Broadly, 
+// FILESYSTEM_MSW_MIXED_MODE - selects mixed mode paths, which use forward slash instead of backslash. Broadly,
 // windows apps have graduated to a point of supporting mixed-mode paths in all but the most extreme legacy app
 // situations (such as pathname parsing by `cmd.exe` and `start.exe`). In some cases mixed mode paths may parse
 // more reliably than legacy native style paths using backslash. For this reason, forward slash is now preferred
@@ -172,10 +172,12 @@ public:
 		// implementation note: returns a string because a filename will itself never have
 		// variances based on host OS / platform.
 
-		auto pos = uni_path_.find_last_of('.');
-
-		if (pos != std::string::npos)
-			return uni_path_.substr(pos);
+		auto fn = filename();
+		if (fn.find_first_not_of('.') != fn.npos) {
+			auto pos = uni_path_.find_last_of('.');
+			if (pos != std::string::npos)
+				return uni_path_.substr(pos);
+		}
 
 		return {};
 	}
