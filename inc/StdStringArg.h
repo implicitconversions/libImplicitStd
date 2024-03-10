@@ -7,6 +7,8 @@
 #include <cassert>
 
 // StringConversionMagick - struct meant for use as an aide in function parameter passing only.
+//   It allows accepting std::string or (char const*) without forcing the programmer to explicitly
+//  qualify the std::string with '.c_str()'
 //
 // Rationale:
 //   C++ has a rule that we can't use references as the fmt parameter to a varadic function,
@@ -64,11 +66,11 @@ struct StringConversionMagick {
 using StdStringTempArg = StringConversionMagick const&;
 
 // StringViewSpecificArg - struct meant for use as an aide in function parameter passing only.
-// Allows passing char*, string, or string_view into a function. The function is then to use the 
+// Allows passing char*, string, or string_view into a function. The function is then to use the
 // read_next/peek_next methods to read out the string. Suitable for use by functions that would
 // normally be well-suited to ASCII-Z strings, eg. where the length of the string does not need
 // to be known ahead of time.
-// 
+//
 // Templating is employed to maximize codegen. Use StringViewGenericArg for un-optimized general solution.
 template<bool allowCString=true, bool allowStringView=true>
 struct StringViewSpecificArg {
@@ -141,7 +143,7 @@ struct StringViewSpecificArg {
 
 	yesinline
 	bool empty() const {
-		if (isView()) { 
+		if (isView()) {
 			return m_stdstr.empty();
 		}
 		else {

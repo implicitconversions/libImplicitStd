@@ -281,10 +281,10 @@ namespace StringUtil::_template_impl {
 		}
 	}
 
-	extern std::optional<bool> ConvertToBool(std::string const& rval);
+	extern std::optional<bool> ConvertToBool(StringConversionMagick const& rval);
 
 	template<typename T>
-	std::optional<T> ConvertFromString_integrals(std::string const& rval) {
+	std::optional<T> ConvertFromString_integrals(StringConversionMagick const& rval) {
 		if (rval.empty()) {
 			return {};
 		}
@@ -297,11 +297,11 @@ namespace StringUtil::_template_impl {
 		return { result };
 	}
 
-	std::optional<double> ConvertFromString_f64(std::string const& rval);
-	std::optional<float > ConvertFromString_f32(std::string const& rval);
+	std::optional<double> ConvertFromString_f64(StringConversionMagick const& rval);
+	std::optional<float > ConvertFromString_f32(StringConversionMagick const& rval);
 }
 
 namespace StringUtil {
 	template<typename T>
-	std::optional<T> Parse(std::string const& rval);
+	std::optional<T> Parse(StringConversionMagick const& rval);
 }
