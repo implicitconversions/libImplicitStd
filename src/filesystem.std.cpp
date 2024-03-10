@@ -137,10 +137,6 @@ void path::update_native_path() {
 #endif
 }
 
-std::string absolute(const path& fspath) {
-	return std::filesystem::absolute(fspath.asLibcStr()).lexically_normal().string();
-}
-
 bool stat(const path& fspath, struct ::stat& st) {
 	return ::stat(fspath.asLibcStr().c_str(), &st) == 0;
 }

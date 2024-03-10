@@ -66,7 +66,7 @@ bool		is_device			(const path& path);
 std::string replace_extension	(const std::string& srcpath, const std::string& ext);
 std::string remove_extension	(const std::string& srcpath, const std::string& ext_to_remove);
 bool		stat				(const path& path, struct stat& st);		// use posix_stat instead. (this provided only for API compat with std::filesystem)
-std::string absolute			(const path& fspath);
+fs::path	absolute			(const path& fspath);
 
 std::vector<path>	directory_iterator(const path& path);
 void				directory_iterator(const std::function<void (const fs::path& path)>& func, const path& path);

@@ -322,6 +322,10 @@ path& path::concat(const std::string& src)
 	return *this;
 }
 
+fs::path absolute(const path& fspath) {
+	return fs::path(s_app0_dir) / fspath;
+}
+
 static constexpr bool MIXED_MODE = true;
 static constexpr bool NATIVE_MODE = true;
 
