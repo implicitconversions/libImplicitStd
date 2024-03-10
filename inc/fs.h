@@ -264,13 +264,15 @@ public:
 	[[nodiscard]] path dirname() const { return parent_path(); }
 
 	// std::string conversions
-	[[nodiscard]] const char* c_str				() const { return libc_path().c_str(); }
-	[[nodiscard]] const std::string& string		() const { return libc_path(); }
-	[[nodiscard]] const std::string& u8string	() const { return libc_path(); }
-	[[nodiscard]] const std::string& uni_string	() const { return uni_path_; }		// always u8string
+	[[nodiscard]] const char* c_str				   () const { return libc_path().c_str(); }
+	[[nodiscard]] const std::string& string		   () const { return libc_path(); }
+	[[nodiscard]] const std::string& u8string	   () const { return libc_path(); }
+	[[nodiscard]] const std::string& native        () const { return libc_path(); }
+	[[nodiscard]] const std::string& uni_string	   () const { return uni_path_; }		// uni - unified (or unix-style)
+	[[nodiscard]] const std::string& generic_string() const { return uni_path_; }		// generic is same as uni, provided for std::filesystem compat
 
-	[[nodiscard]] operator const char*			() const { return libc_path().c_str(); }
-	[[nodiscard]] operator const std::string&	() const { return libc_path(); }
+	[[nodiscard]] operator const char*			   () const { return libc_path().c_str(); }
+	[[nodiscard]] operator const std::string&	   () const { return libc_path(); }
 
 	bool  operator == (const path& s)           const;
 	bool  operator != (const path& s)           const;
@@ -299,13 +301,13 @@ public:
 	path  operator +  (const std::string& ext)  const { return path(*this).concat(ext); }
 	path& operator += (const std::string& ext)	      { return concat(ext); }
 
-	std::string asLibcStr() const { return libc_path(); }
+	[[nodiscard]] [[deprecated("use native()")]] std::string asLibcStr() const { return libc_path(); }
 
-	static std::string asLibcStr(const char* src) {
-		return fs::path(src).asLibcStr();
+	[[nodiscard]] static std::string asLibcStr(const char* src) {
+		return fs::path(src).native();
 	}
-	static std::string asLibcStr(const fs::path& src) {
-		return src.asLibcStr();
+	[[nodiscard]] static std::string asLibcStr(const fs::path& src) {
+		return src.native();
 	}
 public:
 	[[nodiscard]] std::string& raw_modifiable_uni () { return uni_path_; }

@@ -1,7 +1,7 @@
 #include "standardfilesystem.h"
 
 CStatInfo StandardFileSystem::Stat(const fs::path& path) {
-	return posix_stat(path.asLibcStr().c_str());
+	return posix_stat(path);
 }
 
 bool StandardFileSystem::Exists(const fs::path& path) {
