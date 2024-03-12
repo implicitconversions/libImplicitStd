@@ -27,7 +27,7 @@
 #	define FILESYSTEM_MOUNT_NAME_LENGTH     (1)
 #endif
 
-// FILESYSTEM_MSW_MIXED_MODE - selects mixed mode paths, which use forward slash instead of backslash. Broadly, 
+// FILESYSTEM_MSW_MIXED_MODE - selects mixed mode paths, which use forward slash instead of backslash. Broadly,
 // windows apps have graduated to a point of supporting mixed-mode paths in all but the most extreme legacy app
 // situations (such as pathname parsing by `cmd.exe` and `start.exe`). In some cases mixed mode paths may parse
 // more reliably than legacy native style paths using backslash. For this reason, forward slash is now preferred
@@ -54,7 +54,7 @@ std::string ConvertToMswMixed	(const std::string& unix_path, int maxMountLength)
 std::string ConvertToMsw		(const std::string& unix_path);
 std::string ConvertToMswNative	(const std::string& unix_path);
 std::string ConvertToMswMixed	(const std::string& unix_path);
-std::string PathFromString		(const char* path);
+std::string PathFromString		(const char* path, int maxMountLength=FILESYSTEM_MOUNT_NAME_LENGTH);
 
 bool		exists				(const path& path);
 bool		remove				(const path& path);
@@ -66,7 +66,7 @@ bool		is_device			(const path& path);
 std::string replace_extension	(const std::string& srcpath, const std::string& ext);
 std::string remove_extension	(const std::string& srcpath, const std::string& ext_to_remove);
 bool		stat				(const path& path, struct stat& st);		// use posix_stat instead. (this provided only for API compat with std::filesystem)
-std::string absolute			(const path& fspath);
+fs::path	absolute			(const path& fspath);
 
 std::vector<path>	directory_iterator(const path& path);
 void				directory_iterator(const std::function<void (const fs::path& path)>& func, const path& path);
@@ -172,10 +172,12 @@ public:
 		// implementation note: returns a string because a filename will itself never have
 		// variances based on host OS / platform.
 
-		auto pos = uni_path_.find_last_of('.');
-
-		if (pos != std::string::npos)
-			return uni_path_.substr(pos);
+		auto fn = filename();
+		if (fn.find_first_not_of('.') != fn.npos) {
+			auto pos = uni_path_.find_last_of('.');
+			if (pos != std::string::npos)
+				return uni_path_.substr(pos);
+		}
 
 		return {};
 	}
@@ -262,13 +264,15 @@ public:
 	[[nodiscard]] path dirname() const { return parent_path(); }
 
 	// std::string conversions
-	[[nodiscard]] const char* c_str				() const { return libc_path().c_str(); }
-	[[nodiscard]] const std::string& string		() const { return libc_path(); }
-	[[nodiscard]] const std::string& u8string	() const { return libc_path(); }
-	[[nodiscard]] const std::string& uni_string	() const { return uni_path_; }		// always u8string
+	[[nodiscard]] const char* c_str				   () const { return libc_path().c_str(); }
+	[[nodiscard]] const std::string& string		   () const { return libc_path(); }
+	[[nodiscard]] const std::string& u8string	   () const { return libc_path(); }
+	[[nodiscard]] const std::string& native        () const { return libc_path(); }
+	[[nodiscard]] const std::string& uni_string	   () const { return uni_path_; }		// uni - unified (or unix-style)
+	[[nodiscard]] const std::string& generic_string() const { return uni_path_; }		// generic is same as uni, provided for std::filesystem compat
 
-	[[nodiscard]] operator const char*			() const { return libc_path().c_str(); }
-	[[nodiscard]] operator const std::string&	() const { return libc_path(); }
+	[[nodiscard]] operator const char*			   () const { return libc_path().c_str(); }
+	[[nodiscard]] operator const std::string&	   () const { return libc_path(); }
 
 	bool  operator == (const path& s)           const;
 	bool  operator != (const path& s)           const;
@@ -297,13 +301,13 @@ public:
 	path  operator +  (const std::string& ext)  const { return path(*this).concat(ext); }
 	path& operator += (const std::string& ext)	      { return concat(ext); }
 
-	std::string asLibcStr() const { return libc_path(); }
+	[[nodiscard]] [[deprecated("use native()")]] std::string asLibcStr() const { return libc_path(); }
 
-	static std::string asLibcStr(const char* src) {
-		return fs::path(src).asLibcStr();
+	[[nodiscard]] static std::string asLibcStr(const char* src) {
+		return fs::path(src).native();
 	}
-	static std::string asLibcStr(const fs::path& src) {
-		return src.asLibcStr();
+	[[nodiscard]] static std::string asLibcStr(const fs::path& src) {
+		return src.native();
 	}
 public:
 	[[nodiscard]] std::string& raw_modifiable_uni () { return uni_path_; }

@@ -27,7 +27,7 @@ bool path::operator <= (const path& s) const { return strcasecmp(uni_path_.c_str
 
 // create a path from an incoming user-provided string.
 // Performs santiy checks on input.
-std::string PathFromString(const char* path)
+std::string PathFromString(const char* path, int maxMountLength)
 {
 	if (!path || !path[0])
 		return {};
@@ -57,23 +57,23 @@ bool exists(const path& fspath) {
 		// /dev/null and /dev/tty (NUL/CON) always exist, contrary to what std::filesystem thinks... --jstine
 		return true;
 	}
-	auto ret = std::filesystem::exists(fspath.asLibcStr(), nothrow_please_kthx);
+	auto ret = std::filesystem::exists(fspath.native(), nothrow_please_kthx);
 	return ret && !nothrow_please_kthx;
 }
 
 bool remove(const path& fspath) {
 	std::error_code nothrow_please_kthx;
-	return std::filesystem::remove(fspath.asLibcStr(), nothrow_please_kthx);
+	return std::filesystem::remove(fspath.native(), nothrow_please_kthx);
 }
 
 bool remove_all(const path& fspath) {
 	std::error_code nothrow_please_kthx;
-	return std::filesystem::remove_all(fspath.asLibcStr(), nothrow_please_kthx);
+	return std::filesystem::remove_all(fspath.native(), nothrow_please_kthx);
 }
 
 intmax_t file_size(const path& fspath) {
 	std::error_code nothrow_please_kthx;
-	auto ret = std::filesystem::file_size(fspath.asLibcStr(), nothrow_please_kthx);
+	auto ret = std::filesystem::file_size(fspath.native(), nothrow_please_kthx);
 	if (nothrow_please_kthx)
 		return 0;
 
@@ -82,7 +82,7 @@ intmax_t file_size(const path& fspath) {
 
 bool is_directory(const path& fspath) {
 	std::error_code nothrow_please_kthx;
-	auto ret = std::filesystem::is_directory(fspath.asLibcStr(), nothrow_please_kthx);
+	auto ret = std::filesystem::is_directory(fspath.native(), nothrow_please_kthx);
 	return ret && !nothrow_please_kthx;
 }
 
@@ -92,7 +92,7 @@ bool create_directory(const path& fspath) {
 		return true;
 
 	std::error_code nothrow_please_kthx;
-	if (!std::filesystem::create_directories(fspath.asLibcStr(), nothrow_please_kthx)) {
+	if (!std::filesystem::create_directories(fspath.native(), nothrow_please_kthx)) {
 		return (nothrow_please_kthx.value() == EEXIST || nothrow_please_kthx.value() == 183L); 	// return 1 for ERROR_ALREADY_EXISTS
 	}
 	return 1;
@@ -101,7 +101,7 @@ bool create_directory(const path& fspath) {
 std::vector<path> directory_iterator(const path& fspath) {
 	if (!fs::exists(fspath)) return {};
 	std::vector<path> meh;
-	for (const std::filesystem::path& item : std::filesystem::directory_iterator(fspath.asLibcStr())) {
+	for (const std::filesystem::path& item : std::filesystem::directory_iterator(fspath.native())) {
 		meh.push_back(item.string());
 	}
 	return meh;
@@ -109,7 +109,7 @@ std::vector<path> directory_iterator(const path& fspath) {
 
 void directory_iterator(const std::function<void (const fs::path& path)>& func, const path& fspath) {
 	if (!fs::exists(fspath)) return;
-	for (const std::filesystem::path& item : std::filesystem::directory_iterator(fspath.asLibcStr())) {
+	for (const std::filesystem::path& item : std::filesystem::directory_iterator(fspath.native())) {
 		func(item.string());
 	}
 }
@@ -117,7 +117,7 @@ void directory_iterator(const std::function<void (const fs::path& path)>& func, 
 std::vector<path> recursive_directory_iterator(const path& fspath) {
 	if (!fs::exists(fspath)) return {};
 	std::vector<path> meh;
-	for (const std::filesystem::path& item : std::filesystem::recursive_directory_iterator(fspath.asLibcStr())) {
+	for (const std::filesystem::path& item : std::filesystem::recursive_directory_iterator(fspath.native())) {
 		meh.push_back(item.string());
 	}
 	return meh;
@@ -137,12 +137,8 @@ void path::update_native_path() {
 #endif
 }
 
-std::string absolute(const path& fspath) {
-	return std::filesystem::absolute(fspath.asLibcStr()).lexically_normal().string();
-}
-
 bool stat(const path& fspath, struct ::stat& st) {
-	return ::stat(fspath.asLibcStr().c_str(), &st) == 0;
+	return ::stat(fspath, &st) == 0;
 }
 
 } // namespace fs

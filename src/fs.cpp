@@ -28,7 +28,7 @@ void setAppRoot(std::string src) {
 	if (!StringUtil::EndsWith(s_app0_dir, ('/' )) &&
 		!StringUtil::EndsWith(s_app0_dir, ('\\'))
 	) {
-		s_app0_dir.push_back(PLATFORM_MSW ? '\\' : '/');
+		s_app0_dir.push_back((PLATFORM_MSW && !FILESYSTEM_MSW_MIXED_MODE) ? '\\' : '/');
 	}
 }
 
@@ -205,7 +205,7 @@ std::string _tmpl_ConvertToMsw(const std::string& unix_path, int maxMountLength)
 	// If a component sets a root dir to /dev/null then all files supposed to be created under that dir
 	// will become pipes in/out of /dev/null
 
-	bool is_cwd = 0;
+	bool append_approot = 1;
 	bool is_special_root = 0;
 
 	if (src[0] == '/') {
@@ -226,16 +226,18 @@ std::string _tmpl_ConvertToMsw(const std::string& unix_path, int maxMountLength)
 		dst[1] = ':';
 		src  += 2;
 		dst  += 2;
+		append_approot = 0;
 	}
 	else if (src[0] == '.' && (src[1] == '/')) {
 		// relative to current dir, just strip the ".\"
 		src += 2;
 	}
 	else if (src[0] == '/') {
-		// treat /cwd/ in a special way - it gets replaced with s_app0_dir
+		append_approot = 0;
+
+		// treat /cwd/ in a special way - it gets stripped and is -not- replaced with s_app0_dir
 		if (StringUtil::BeginsWith(unix_path, "/cwd/")) {
 			src += 5;
-			is_cwd = 1;
 		}
 		elif (auto slash = unix_path.find_first_of('/', 1); slash < maxMountLength) {
 			// found a slash within the length limit.
@@ -251,6 +253,8 @@ std::string _tmpl_ConvertToMsw(const std::string& unix_path, int maxMountLength)
 			}
 		}
 		else {
+			// special roots don't get backslash conversion. They're not valid paths anyway
+			// so assume the user knows what they're doing for some special purpose/reason.
 			is_special_root = 1;
 		}
 	}
@@ -280,7 +284,7 @@ std::string _tmpl_ConvertToMsw(const std::string& unix_path, int maxMountLength)
 	ptrdiff_t newsize = dst - result.c_str();
 	assertH(newsize <= ptrdiff_t(unix_path.length()));
 
-	if (is_cwd) {
+	if (append_approot) {
 		return s_app0_dir + result;
 	}
 	else {
@@ -322,16 +326,21 @@ path& path::concat(const std::string& src)
 	return *this;
 }
 
+fs::path absolute(const path& fspath) {
+	return fs::path(s_app0_dir) / fspath;
+}
+
 static constexpr bool MIXED_MODE = true;
-static constexpr bool NATIVE_MODE = true;
+static constexpr bool NATIVE_MODE = false;
 
 std::string ConvertToMsw(const std::string& unix_path) {
-
-	return _tmpl_ConvertToMsw<true>(unix_path, FILESYSTEM_MOUNT_NAME_LENGTH);
+	constexpr auto mode = FILESYSTEM_MSW_MIXED_MODE ? MIXED_MODE : NATIVE_MODE;
+	return _tmpl_ConvertToMsw<mode>(unix_path, FILESYSTEM_MOUNT_NAME_LENGTH);
 }
 
 std::string ConvertToMsw(const std::string& unix_path, int maxMountLength) {
-	return _tmpl_ConvertToMsw<true>(unix_path, maxMountLength);
+	constexpr auto mode = FILESYSTEM_MSW_MIXED_MODE ? MIXED_MODE : NATIVE_MODE;
+	return _tmpl_ConvertToMsw<mode>(unix_path, maxMountLength);
 }
 
 std::string ConvertToMswNative(const std::string& unix_path) {

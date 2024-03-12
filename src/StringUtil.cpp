@@ -182,19 +182,19 @@ std::string ReplaceCharSet(std::string srccopy, const char* to_replace, char new
 
 ptrdiff_t CompareCase(std::string_view lval, std::string_view rval)
 {
-    uint8_t const* lvp = (uint8_t*)lval.data();
-    uint8_t const* rvp = (uint8_t*)rval.data();
+	uint8_t const* lvp = (uint8_t*)lval.data();
+	uint8_t const* rvp = (uint8_t*)rval.data();
 
 	auto maxlen = std::min(lval.size(), rval.size());
 
-    for (; maxlen != 0; maxlen--, lvp++, rvp++) {
+	for (; maxlen != 0; maxlen--, lvp++, rvp++) {
 		auto lvl = tolower(*lvp);
 		auto rvl = tolower(*rvp);
 		if (auto diff = lvl - rvl; diff) {
 			return diff;
 		}
-    }
-    return 0;
+	}
+	return 0;
 }
 
 ptrdiff_t FindFirstCase(std::string_view s, std::string_view find) {
@@ -501,7 +501,7 @@ std::string SanitizeUtf8(const std::string& str) {
 	return result;
 }
 
-std::optional<bool> StringUtil::_template_impl::ConvertToBool(std::string const& rval) {
+std::optional<bool> StringUtil::_template_impl::ConvertToBool(StringConversionMagick const& rval) {
 	bool result = 1;
 	if (!rval.empty()) {
 		bool parse_error;
@@ -514,7 +514,7 @@ std::optional<bool> StringUtil::_template_impl::ConvertToBool(std::string const&
 	return { result };
 }
 
-std::optional<double> StringUtil::_template_impl::ConvertFromString_f64(std::string const& rval) {
+std::optional<double> StringUtil::_template_impl::ConvertFromString_f64(StringConversionMagick const& rval) {
 	char *endptr = nullptr;
 	const char* valstr = rval.c_str();
 	auto value = strtod(valstr, &endptr);
@@ -525,7 +525,7 @@ std::optional<double> StringUtil::_template_impl::ConvertFromString_f64(std::str
 	return { value };
 }
 
-std::optional<float> StringUtil::_template_impl::ConvertFromString_f32(std::string const& rval) {
+std::optional<float> StringUtil::_template_impl::ConvertFromString_f32(StringConversionMagick const& rval) {
 	char *endptr = nullptr;
 	const char* valstr = rval.c_str();
 	auto value = strtof(valstr, &endptr);
@@ -536,17 +536,17 @@ std::optional<float> StringUtil::_template_impl::ConvertFromString_f32(std::stri
 	return { value };
 }
 
-template<> std::optional<bool    > StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertToBool(rval);	}
-template<> std::optional<uint32_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint32_t>(rval); }
-template<> std::optional< int32_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int32_t>(rval); }
-template<> std::optional<uint64_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint64_t>(rval); }
-template<> std::optional< int64_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int64_t>(rval); }
-template<> std::optional<uint16_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint16_t>(rval); }
-template<> std::optional< int16_t> StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int16_t>(rval); }
-template<> std::optional<uint8_t > StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals<uint8_t >(rval); }
-template<> std::optional< int8_t > StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_integrals< int8_t >(rval); }
-template<> std::optional<float>    StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_f32(rval); }
-template<> std::optional<double>   StringUtil::Parse(std::string const& rval) { return _template_impl::ConvertFromString_f64(rval); }
+template<> std::optional<bool    > StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertToBool(rval);	}
+template<> std::optional<uint32_t> StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_integrals<uint32_t>(rval); }
+template<> std::optional< int32_t> StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_integrals< int32_t>(rval); }
+template<> std::optional<uint64_t> StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_integrals<uint64_t>(rval); }
+template<> std::optional< int64_t> StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_integrals< int64_t>(rval); }
+template<> std::optional<uint16_t> StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_integrals<uint16_t>(rval); }
+template<> std::optional< int16_t> StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_integrals< int16_t>(rval); }
+template<> std::optional<uint8_t > StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_integrals<uint8_t >(rval); }
+template<> std::optional< int8_t > StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_integrals< int8_t >(rval); }
+template<> std::optional<float>    StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_f32(rval); }
+template<> std::optional<double>   StringUtil::Parse(StringConversionMagick const& rval) { return _template_impl::ConvertFromString_f64(rval); }
 
 std::string StringUtil::LineNumberString(const char* str) {
 	std::stringstream input(str);

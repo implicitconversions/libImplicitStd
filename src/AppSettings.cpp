@@ -105,7 +105,7 @@ StdOptionString<ptrdiff_t> appGetSettingMemorySize(const std::string& name, ptrd
 		errno = EINVAL;
 	}
 	if (auto scalar = CvtNumericalPostfixToScalar(endptr); scalar >= 0) {
-		result.first = value * scalar, rval;
+		result.first = value * scalar;
 	}
 	else {
 		result.first = value;
