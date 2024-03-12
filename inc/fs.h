@@ -54,7 +54,7 @@ std::string ConvertToMswMixed	(const std::string& unix_path, int maxMountLength)
 std::string ConvertToMsw		(const std::string& unix_path);
 std::string ConvertToMswNative	(const std::string& unix_path);
 std::string ConvertToMswMixed	(const std::string& unix_path);
-std::string PathFromString		(const char* path);
+std::string PathFromString		(const char* path, int maxMountLength=FILESYSTEM_MOUNT_NAME_LENGTH);
 
 bool		exists				(const path& path);
 bool		remove				(const path& path);

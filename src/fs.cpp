@@ -335,7 +335,7 @@ static constexpr bool NATIVE_MODE = false;
 
 std::string ConvertToMsw(const std::string& unix_path) {
 	constexpr auto mode = FILESYSTEM_MSW_MIXED_MODE ? MIXED_MODE : NATIVE_MODE;
-	return _tmpl_ConvertToMsw<true>(unix_path, FILESYSTEM_MOUNT_NAME_LENGTH);
+	return _tmpl_ConvertToMsw<mode>(unix_path, FILESYSTEM_MOUNT_NAME_LENGTH);
 }
 
 std::string ConvertToMsw(const std::string& unix_path, int maxMountLength) {

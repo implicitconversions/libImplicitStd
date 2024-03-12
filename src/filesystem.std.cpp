@@ -27,7 +27,7 @@ bool path::operator <= (const path& s) const { return strcasecmp(uni_path_.c_str
 
 // create a path from an incoming user-provided string.
 // Performs santiy checks on input.
-std::string PathFromString(const char* path)
+std::string PathFromString(const char* path, int maxMountLength)
 {
 	if (!path || !path[0])
 		return {};
