@@ -28,7 +28,7 @@ void setAppRoot(std::string src) {
 	if (!StringUtil::EndsWith(s_app0_dir, ('/' )) &&
 		!StringUtil::EndsWith(s_app0_dir, ('\\'))
 	) {
-		s_app0_dir.push_back(PLATFORM_MSW ? '\\' : '/');
+		s_app0_dir.push_back((PLATFORM_MSW && !FILESYSTEM_MSW_MIXED_MODE) ? '\\' : '/');
 	}
 }
 
@@ -331,15 +331,16 @@ fs::path absolute(const path& fspath) {
 }
 
 static constexpr bool MIXED_MODE = true;
-static constexpr bool NATIVE_MODE = true;
+static constexpr bool NATIVE_MODE = false;
 
 std::string ConvertToMsw(const std::string& unix_path) {
-
+	constexpr auto mode = FILESYSTEM_MSW_MIXED_MODE ? MIXED_MODE : NATIVE_MODE;
 	return _tmpl_ConvertToMsw<true>(unix_path, FILESYSTEM_MOUNT_NAME_LENGTH);
 }
 
 std::string ConvertToMsw(const std::string& unix_path, int maxMountLength) {
-	return _tmpl_ConvertToMsw<true>(unix_path, maxMountLength);
+	constexpr auto mode = FILESYSTEM_MSW_MIXED_MODE ? MIXED_MODE : NATIVE_MODE;
+	return _tmpl_ConvertToMsw<mode>(unix_path, maxMountLength);
 }
 
 std::string ConvertToMswNative(const std::string& unix_path) {
