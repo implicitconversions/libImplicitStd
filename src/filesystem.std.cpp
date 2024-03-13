@@ -40,7 +40,7 @@ std::string PathFromString(const char* path, int maxMountLength)
 	}
 	else {
 		// assume path is mixed forward/backslash, normalize to forward slash mode.
-		path_ = fs::ConvertFromMsw(path);
+		path_ = fs::ConvertFromMsw(path, maxMountLength);
 	}
 
 	if (path_.back() == '/') {

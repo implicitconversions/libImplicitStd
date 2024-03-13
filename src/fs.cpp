@@ -206,7 +206,6 @@ std::string _tmpl_ConvertToMsw(const std::string& unix_path, int maxMountLength)
 	// will become pipes in/out of /dev/null
 
 	bool append_approot = 1;
-	bool is_special_root = 0;
 
 	if (src[0] == '/') {
 		if (unix_path == "/dev/null" || StringUtil::BeginsWith(unix_path, "/dev/null/")) {
@@ -239,7 +238,7 @@ std::string _tmpl_ConvertToMsw(const std::string& unix_path, int maxMountLength)
 		if (StringUtil::BeginsWith(unix_path, "/cwd/")) {
 			src += 5;
 		}
-		elif (auto slash = unix_path.find_first_of('/', 1); slash < maxMountLength) {
+		elif (auto slash = unix_path.find_first_of('/', 1); slash < maxMountLength || unix_path.size() <= maxMountLength) {
 			// found a slash within the length limit.
 			// convert into a mount name prefix.
 			++src;
