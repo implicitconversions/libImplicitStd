@@ -104,7 +104,9 @@ ifeq ($(platform), msw)  # msw from mingw or clang64 prompt (MSYS2)
 
     NEED_PREPROCESS_PRAGMA_COMMENT_LIB := 1
 
-    LDFLAGS += -mwindows -static
+    # Windows mode disables ctrl+c of the process from a shell.
+    LDFLAGS += -mwindows 
+    LDFLAGS += -static
     DEFINES += _WINDOWS
     LD = $(CXX)
 

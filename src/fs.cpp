@@ -239,7 +239,7 @@ std::string _tmpl_ConvertToMsw(const std::string& unix_path, int maxMountLength)
 		if (StringUtil::BeginsWith(unix_path, "/cwd/")) {
 			src += 5;
 		}
-		elif (auto slash = unix_path.find_first_of('/', 1); slash < maxMountLength) {
+		elif (auto slash = unix_path.find_first_of('/', 1); slash < maxMountLength || unix_path.size() <= maxMountLength) {
 			// found a slash within the length limit.
 			// convert into a mount name prefix.
 			++src;
