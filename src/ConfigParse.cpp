@@ -132,7 +132,9 @@ void ConfigParseArgs(int argc, const char* const argv[], char const* prefix, con
 		const char* arg = argv[i];
 		if (!arg[0]) continue;
 
-		if (prefix && (strcmp(arg, prefix)==0)) {
+		// if you need this function to ignore '--' as an end_of_options flag then pre-process the argv and set
+		// any offending naked '--' to null.
+		if (strcmp(arg, "--")==0) {
 			// rest of the CLI is positional args.
 			end_of_options = 1;
 			continue;
@@ -156,9 +158,9 @@ void ConfigParseArgs(int argc, const char* const argv[], char const* prefix, con
 		}
 		else {
 			// allow support for space-delimited parameter assignment.
-			// valid only if the prefix is non-null.
-			if ((i+1 < argc) && (prefix && prefix[0] && !StringUtil::BeginsWith(argv[i+1], prefix))) {
-				rvalue = argv[i+1];
+			// valid only if the prefix is non-null and the rvalue has no assignment operator (=).
+			if ((i+1 < argc) && (prefix && prefix[0] && argv[i+1] && !StringUtil::BeginsWith(argv[i+1], prefix) && !strchr(argv[i+1], '='))) {
+				rvalue = argv[++i];
 			}
 			else {
 				// no assignment operator? treat this as a positional parameter (not an argument or switch)
