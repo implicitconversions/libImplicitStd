@@ -26,6 +26,8 @@
 #	else
 #		define COMPILER_MSC (1)
 #	endif
+#else
+#	define COMPILER_MSC (0)
 #endif
 
 // C/C++ interop: nullptr and bool.
@@ -43,7 +45,7 @@
 #endif
 
 #if !defined(LAMBDA_ATTRIBUTE)
-#	if defined(COMPILER_MSC)
+#	if COMPILER_MSC
 #		define LAMBDA_ATTRIBUTE(...)	__VA_ARGS__
 #	elif defined(__clang__)
 #		define LAMBDA_ATTRIBUTE(...)	__VA_ARGS__
