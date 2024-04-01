@@ -26,8 +26,6 @@
 #	else
 #		define COMPILER_MSC (1)
 #	endif
-#else
-#	define COMPILER_MSC (0)
 #endif
 
 // C/C++ interop: nullptr and bool.
@@ -45,7 +43,7 @@
 #endif
 
 #if !defined(LAMBDA_ATTRIBUTE)
-#	if COMPILER_MSC
+#	if defined(COMPILER_MSC)
 #		define LAMBDA_ATTRIBUTE(...)	__VA_ARGS__
 #	elif defined(__clang__)
 #		define LAMBDA_ATTRIBUTE(...)	__VA_ARGS__
@@ -55,7 +53,7 @@
 #endif
 
 // Help MSVC Conform to the GCC/Clang way of doing things.
-#if COMPILER_MSC
+#if defined(COMPILER_MSC)
 
 #	define __builtin_bswap32(a)			_byteswap_ulong(a)
 #	define __noinline					__declspec(noinline)
@@ -95,7 +93,7 @@
 
 #else
 
-#	if defined(__MINGW64__) || defined(_MSC_VER)
+#	if defined(__MINGW64__)
 #		define __always_inline			__attribute__((__always_inline__))
 #	endif
 
@@ -138,7 +136,7 @@
 // version of it for Microsoft, define expect_true/expect_false macros instead.
 // NOTE: The return value of __builtin_expect is the return value of the expression. Use explicit typecast to bool
 //       to ensure the result is consistent acorss compilers.
-#if COMPILER_MSC
+#if defined(COMPILER_MSC)
 #  define expect_true(expr)     ((bool)(expr))
 #  define expect_false(expr)    ((bool)(expr))
 #else
@@ -150,14 +148,14 @@
 // docs as the preferred way to work around the annoying design restrictions of _Pragma(). It essentially makes
 // the C99 _Pragma feature behave just like the Microsoft __pragma feature, therefore I've named it accordingly
 // and inject it only when compiling on a toolchain that lacks __pragma. This simplifies MSVC/Clang interop.
-#if !defined(_MSC_VER)
+#if !defined(COMPILER_MSC)
 #	define __pragma(x)     _Pragma (#x)
 #endif
 
 // Slightly less annoying way to deal with MSVC's lack of an equivalent to GCC/Clang __attribute__((packed)).
 // Note that we do not need to specify alignas(1), but if we do it hints MSVC to produce compiler warnings
 // anytime the packing isn't working the way we expect.
-#if COMPILER_MSC
+#if defined(COMPILER_MSC)
 #	define __PACKED(...)  __pragma(pack(push,1)) __VA_ARGS__ alignas(1) __pragma(pack(pop))
 #else
 #   define __packed __attribute__((packed))
@@ -176,20 +174,20 @@
 #   define __cachelined
 #endif
 
-#if COMPILER_MSC
+#if defined(COMPILER_MSC)
 #	define __selectany __declspec(selectany)
 #else
 #	define __selectany
 #endif
 
-#if COMPILER_MSC
+#if defined(COMPILER_MSC)
 #	define __verify_fmt(fmtpos, vapos)
 #else
 #	define __verify_fmt(fmtpos, vapos)  __attribute__ ((format (printf, fmtpos, vapos)))
 #endif
 
 #if BUILD_HOUSE
-#	if COMPILER_MSC
+#	if defined(COMPILER_MSC)
 #		define HOUSE_DEBUGGABLE	__pragma(optimize("", off))
 #	elif defined(__clang__)
 		// [jstine 2022] clang will spam warnings about ignored attributes around __nodebug and __always_inline. We don't want to turn this
@@ -206,7 +204,7 @@
 #	define HOUSE_DEBUGGABLE
 #endif
 
-#if COMPILER_MSC
+#if defined(COMPILER_MSC)
 #	define RETAIL_DEBUGGABLE	__pragma(optimize("", off))
 #elif defined(__clang__)
 	// clang complains if this particular pragma isn't explicitly markered as a clang paragma.
@@ -236,7 +234,7 @@
 
 #	define MSC_WARNING_DISABLE_POP()			\
 		__pragma(warning(pop))
-#else
+#	else
 #	define MSC_WARNING_DISABLE(nums)
 #	define MSC_WARNING_DISABLE_PUSH(nums)
 #	define MSC_WARNING_DISABLE_POP()
