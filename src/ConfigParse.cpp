@@ -18,8 +18,10 @@ bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, C
 	};
 	auto line = trim(readbuf);
 
+	// skip empty lines to avoid iterator check failures.
 	// skip comments ('#' is preferred, ';' is legacy)
 	// Support and Usage of '#' allows for bash/posix style hashbangs (#!something)
+	if (line.empty())   return 1;
 	if (line[0] == ';') return 1;
 	if (line[0] == '#') return 1;
 
@@ -60,10 +62,6 @@ bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, C
 		return 1;
 	}
 
-	// skip empty lines
-	if (line.length() == 0)
-		return 1;
-
 	auto pos = line.find('=');
 	if (pos != line.npos) {
 		push_item(trim(line.substr(0, pos)), trim(line.substr(pos + 1)));
@@ -76,10 +74,9 @@ bool ConfigParseLine(const char* readbuf, const ConfigParseAddFunc& push_item, C
 }
 
 bool ConfigParseFile(FILE* fp, const ConfigParseAddFunc& push_item, ConfigParseContext const& ctx) {
-	constexpr int max_buf = 4096;
-	char readbuf[max_buf];
+	char readbuf[2048];
 	auto linenum = 0;
-	while (fgets(readbuf,max_buf,fp)) {
+	while (fgets(readbuf, fp)) {
 		linenum++;
 		if (!ConfigParseLine(readbuf, push_item, { ctx.fullpath, ctx.linenum + linenum })) {
 			return 0;
