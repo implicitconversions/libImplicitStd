@@ -68,7 +68,7 @@ void _internalBufferFormatterImpl<AllowHeapFallback>::longbuf_appendfv(int expec
 	}
 }
 
-template<bool AllowHeapFallback> inline yesinline
+template<bool AllowHeapFallback> yesinline inline
 void _internalBufferFormatterImpl<AllowHeapFallback>::append(const char* msg) {
 	if (expect_false(!msg || !msg[0])) return;
 
@@ -145,7 +145,7 @@ void _internalBufferFormatterImpl<AllowHeapFallback>::appendfv(const char* fmt, 
 	}
 }
 
-template<bool AllowHeapFallback> inline yesinline
+template<bool AllowHeapFallback> yesinline inline
 void _internalBufferFormatterImpl<AllowHeapFallback>::clear() {
 	// impl note: use 'inline' keyword as a workaround for some bug in gcc where it fails to properly
 	// categorize a template definition as inline/static.
@@ -167,7 +167,7 @@ void _internalBufferFormatterImpl<AllowHeapFallback>::formatv(const char* fmt, v
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<int bufsize> inline yesinline
+template<int bufsize> yesinline inline
 void StringBuilder<bufsize>::clear() {
 	_internalFormatterSpillToHeap{buffer, bufsize, wpos, &longbuf}.clear();
 }
@@ -199,7 +199,7 @@ StringBuilder<bufsize>& StringBuilder<bufsize>::appendf(const char* fmt, ...) {
 	return *this;
 }
 
-template<int bufsize> inline yesinline
+template<int bufsize> yesinline inline
 StringBuilder<bufsize>& StringBuilder<bufsize>::formatv(const char* fmt, va_list args) {
 	clear();
 	return appendfv(fmt, args);
@@ -216,18 +216,18 @@ StringBuilder<bufsize>& StringBuilder<bufsize>::format(const char* fmt, ...) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<int bufsize> inline yesinline
+template<int bufsize> yesinline inline
 void StringBuilderTrunc<bufsize>::clear() {
 	_internalFormatterTruncate{buffer, bufsize, wpos}.clear();
 }
 
-template<int bufsize> inline yesinline
+template<int bufsize> yesinline inline
 StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::append(const char* msg) {
 	_internalFormatterTruncate{buffer, bufsize, wpos}.append(msg);
 	return *this;
 }
 
-template<int bufsize> inline yesinline
+template<int bufsize> yesinline inline
 StringBuilderTrunc<bufsize>& StringBuilderTrunc<bufsize>::append(char ch) {
 	_internalFormatterTruncate{buffer, bufsize, wpos}.append(ch);
 	return *this;
