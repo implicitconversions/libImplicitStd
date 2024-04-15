@@ -244,10 +244,15 @@ public:
 	[[nodiscard]] operator const std::string&	() const { return libc_path(); }
 
 	bool  operator == (const path& s)           const;
-	bool  operator != (const path& s)           const;
-
 	bool  operator == (const char *s)           const;
+
+	// three-way comparison rules can cause errors when using comparisons on certain STL constainers (std::vector).
+	// Avoiding definition of != when the compiler supports three-way comparison fixes the problem.
+	//   (vfixes MSC error: "rewritten candidate function was excluded from overload resolution because a corresponding operator!= declared in the same scope")
+#if !defined(__cpp_impl_three_way_comparison) || (__cpp_impl_three_way_comparison < 201907)
+	bool  operator != (const path& s)           const;
 	bool  operator != (const char *s)           const;
+#endif
 
 	bool  operator >  (const path& s)           const;
 	bool  operator >= (const path& s)           const;
