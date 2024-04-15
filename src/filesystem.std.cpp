@@ -15,9 +15,12 @@
 namespace fs {
 
 bool path::operator == (const path& s) const { return strcasecmp(uni_path_.c_str(), s.uni_path_.c_str()) == 0; }
-bool path::operator != (const path& s) const { return strcasecmp(uni_path_.c_str(), s.uni_path_.c_str()) != 0; }
 bool path::operator == (const char *s) const { return strcasecmp(uni_path_.c_str(), fs::PathFromString(s).c_str()) == 0; }
+
+#if !defined(__cpp_impl_three_way_comparison) || (__cpp_impl_three_way_comparison < 201907)
+bool path::operator != (const path& s) const { return strcasecmp(uni_path_.c_str(), s.uni_path_.c_str()) != 0; }
 bool path::operator != (const char *s) const { return strcasecmp(uni_path_.c_str(), fs::PathFromString(s).c_str()) != 0; }
+#endif
 
 bool path::operator >  (const path& s) const { return strcasecmp(uni_path_.c_str(), s.uni_path_.c_str()) >  0; }
 bool path::operator >= (const path& s) const { return strcasecmp(uni_path_.c_str(), s.uni_path_.c_str()) >= 0; }
