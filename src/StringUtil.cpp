@@ -33,6 +33,9 @@
 #endif
 
 #if PLATFORM_MSW
+#ifndef NOMINMAX
+	#define NOMINMAX 1
+#endif
 #include <Shlwapi.h>
 
 #pragma comment(lib, "Shlwapi")
@@ -390,7 +393,7 @@ namespace {
 				char(0b10000000 | int(iChar & 0b00111111)), // The bottom 6 bits of the ascii8 character
 			};
 
-			result.append(utf8Char, sizeof(utf8Char));
+			result.append(utf8Char, std::ssize(utf8Char));
 		}
 
 		return result;

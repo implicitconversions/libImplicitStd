@@ -32,11 +32,15 @@
 
 // C/C++ interop: nullptr and bool.
 #if !__cplusplus
-#	define EXTERN_C extern
+#	ifndef EXTERN_C
+#		define EXTERN_C extern
+#	endif
 #	define nullptr NULL
 	typedef _Bool bool;
 #else
-#	define EXTERN_C extern "C"
+#	ifndef EXTERN_C
+#		define EXTERN_C extern "C"
+#	endif
 #endif
 
 // gcc/clang provide this define normally, and if not then assume any attribute we check for doesn't exist.

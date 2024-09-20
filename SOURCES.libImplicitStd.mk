@@ -1,3 +1,5 @@
+# If you change the file be sure to update libImplicitStd.props as well
+
 SOURCES_libImplicitStd :=
 SOURCES_libImplicitStd += src/UnattendedMode.cpp
 SOURCES_libImplicitStd += src/AppSettings.cpp

@@ -32,6 +32,7 @@
 namespace std {
 #endif
 _extern_c int      _fi_redirect_printf   (const char* fmt, ...);
+_extern_c int      _fi_redirect_vprintf  (const char* fmt, va_list args);
 _extern_c int      _fi_redirect_vfprintf (FILE* handle, const char* fmt, va_list args);
 _extern_c int      _fi_redirect_fprintf  (FILE* handle, const char* fmt, ...);
 _extern_c int      _fi_redirect_puts     (char const* _Buffer);
@@ -42,6 +43,7 @@ _extern_c void _fi_redirect_winconsole_handle(FILE* stdhandle, void* winhandle);
 #if defined(__cplusplus)
 }
 using std::_fi_redirect_printf   ;
+using std::_fi_redirect_vprintf  ;
 using std::_fi_redirect_vfprintf ;
 using std::_fi_redirect_fprintf  ;
 using std::_fi_redirect_puts     ;
@@ -73,6 +75,7 @@ using std::_fi_redirect_winconsole_handle;
 #	define errprintf(fmt, ...)		_fi_redirect_fprintf (stderr, "" fmt, ## __VA_ARGS__)
 #endif
 
+#define vprintf(fmt, args)	    _fi_redirect_vprintf (fmt, args)
 #define vfprintf(fp, fmt, args)	_fi_redirect_vfprintf(fp, fmt, args)
 #define puts(msg)				_fi_redirect_puts    (msg)
 #define fputs(msg, fp)			_fi_redirect_fputs   (msg, fp)

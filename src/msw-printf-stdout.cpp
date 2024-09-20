@@ -52,6 +52,7 @@ void msw_OutputDebugStringV(const char* fmt, va_list args)
 }
 #if REDEFINE_PRINTF
 #	undef printf
+#	undef vprintf
 #	undef vfprintf
 #	undef fprintf
 #	undef puts
@@ -134,6 +135,12 @@ int std::_fi_redirect_printf(const char* fmt, ...)
 	va_start(argptr, fmt);
 	auto result = _fi_redirect_vfprintf(stdout, fmt, argptr);
 	va_end(argptr);
+	return result;
+}
+
+int std::_fi_redirect_vprintf(const char* fmt, va_list args)
+{
+	auto result = _fi_redirect_vfprintf(stdout, fmt, args);
 	return result;
 }
 

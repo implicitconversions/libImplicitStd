@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- If you change this file be sure to update SOURCES.libImplicitStd.mk as well -->
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Common source files -->
+  <ItemGroup>
+    <ClCompile Include="subtree/libimplicitstd/src/UnattendedMode.cpp" />
+    <ClCompile Include="subtree/libimplicitstd/src/AppSettings.cpp" />
+    <ClCompile Include="subtree/libimplicitstd/src/ConfigParse.cpp" />
+    <ClCompile Include="subtree/libimplicitstd/src/fs.cpp" />
+    <ClCompile Include="subtree/libimplicitstd/src/standardfilesystem.cpp" />
+    <ClCompile Include="subtree/libimplicitstd/src/StringBuilder.cpp" />
+    <ClCompile Include="subtree/libimplicitstd/src/StringUtil.cpp" />
+    <ClCompile Include="subtree/libimplicitstd/src/strtosj.cpp" />
+    <ClCompile Include="subtree/libimplicitstd/src/icyReportError.cpp" />
+    <ClCompile Include="subtree/libimplicitstd/src/posix_file.cpp" />
+  </ItemGroup>
+
+</Project>

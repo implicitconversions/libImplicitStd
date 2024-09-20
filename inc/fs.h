@@ -168,6 +168,7 @@ public:
 		return fs::replace_extension(uni_path_, extension).c_str();
 	}
 
+	// Full extension of path, including first '.'
 	std::string extension() const {
 		// implementation note: returns a string because a filename will itself never have
 		// variances based on host OS / platform.

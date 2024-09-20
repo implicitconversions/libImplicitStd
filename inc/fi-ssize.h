@@ -8,9 +8,18 @@
 
 // compilers don't support __has_cpp_attribute() yet, really. Get bizarre errors on both gcc and clang.
 // will need to define HAS_STD_SSIZE manually via makefiles for anything that doesn't support it still.
+// Here's a simple test which might not be accurate. Please improve this as errors are encountered.
+#if !defined(HAS_STD_SSIZE)
+#	if defined(__GNUC__) && (__GNUC__ < 10) && !defined(__MINGW64__) && !defined(__clang__)
+#		define HAS_STD_SSIZE 	0
+#	endif
+// add other compilers here
+#endif
+
 #if !defined(HAS_STD_SSIZE)
 #	define HAS_STD_SSIZE 	1
 #endif
+
 
 #if !HAS_STD_SSIZE
 namespace std {
