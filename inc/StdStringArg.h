@@ -1,3 +1,4 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
 #pragma once
 
 #include <string>
@@ -13,11 +14,6 @@
 // Rationale:
 //   C++ has a rule that we can't use references as the fmt parameter to a varadic function,
 //   which prevents us from making a nice API that can accept std::string or const char* implicitly.
-//   In the past I've worked around this by making my own wrapper class for std::string that has
-//   an implicit conversion operator for const char*(), but that's a pretty heavyweight approach that
-//   makes it really hard for libraries to inter-operate with other libs that expect plain old
-//   std::string.  So now I'm going with this, let's see what happens!  --jstine
-//
 struct StringConversionMagick {
 	const char*			m_cstr   = nullptr;
 	const std::string*	m_stdstr = nullptr;

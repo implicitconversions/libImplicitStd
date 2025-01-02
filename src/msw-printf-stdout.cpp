@@ -1,3 +1,4 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
 
 #if PLATFORM_MSW
 #define NOMINMAX
@@ -241,7 +242,7 @@ int std::_fi_redirect_fputc(int ch, FILE* handle) {
 	{
 		if (msw_IsDebuggerPresent()) {
 			// if someone passes a UTF32 char in then we have to do something annoying here to
-			// convert it to UTF8, I think. ugh. For now I'm happy to just handle the common case, '\n'
+			// convert it to UTF8, I think. ugh. For now we're happy to just handle the common case, '\n'
 			char meh[2] = { (char)ch, 0 };
 			msw_OutputDebugString(meh);
 		}

@@ -1,3 +1,5 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
+
 #include "StdStringArg.h"
 #include "jfmt.h"
 #include "ctype.h"
@@ -7,19 +9,6 @@
 
 // Custom string to integer conversion, simplified to return large types (defers clamping to caller) and added
 // support fot C++ string_view, to allow parsing strings without tokenizing them using NUL.
-
-// Historical Implementation Notes:
-// Original intent was to just borrow BSD's strtol implementation and add support for string_view, but a cursory
-// inspection of the implementation revealed some basic flaws in how it calculates overflow, particularly of
-// negative unsigned values but also involving some undefined behavior around SIGNED MODULO (oops). The code in
-// question dates to around 1992 and includes a long comment explaining why we should trust that it works (hint:
-// comments explaining broken code shouldn't automatically make it more trustworthy). Apple even tried to fix it in
-// somewhat hilarious fashion in their BSD port, by throwing like 6 random casts at the problem, creating a series
-// of bizarre logics that I didn't bother trying to sort whether they actually solved the underlying problems or not.
-// Our implementation just tests for signbit inversion which, afaik, works in all signed arithmetic schemes (ones and
-// twos compliment) though I have no direct experience working with ones compliment to verify.
-//
-//   --jstine Dec 2022
 
 template< typename T > yesinline
 std::make_unsigned_t<T> to_unsigned(T src) {

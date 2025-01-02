@@ -4,9 +4,8 @@
 *.sh text eol=lf
 
 # cmd.exe can handle CRLF _or_ LF, but dislikes mixed line endings. Normalize as
-# LF to correct mixed endings. (In general I prefer using LF unless some specific
-# reason to avoid it, CRLF is legacy nonsense that microsoft themselves are trying
-# to move away from)
+# LF to correct mixed endings. (In general we prefer using LF unless some specific
+# reason to avoid it, CRLF is legacy from DOS/Windows.)
 
 *.cmd text eol=lf
 *.bat text eol=lf

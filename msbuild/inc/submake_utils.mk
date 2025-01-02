@@ -1,3 +1,5 @@
+# Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
+
 # helper to eliminate redundant switches in parameters handed to us by parent makefile.
 uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
 

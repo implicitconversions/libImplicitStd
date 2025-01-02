@@ -1,3 +1,4 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
 #pragma once
 
 // [jstine 2022] Workaround for CLANG not enabling the C++20 preprocessor feature when doing Intellisense
@@ -143,8 +144,8 @@
 #endif
 
 // this macro allows the use of _Pragma with automatic escaping of quotes in strings, and is recommended by the GCC
-// docs as the preferred way to work around the annoying design restrictions of _Pragma(). It essentially makes
-// the C99 _Pragma feature behave just like the Microsoft __pragma feature, therefore I've named it accordingly
+// docs as the preferred way to work around the design restrictions of _Pragma(). It essentially makes
+// the C99 _Pragma feature behave just like the Microsoft __pragma feature, therefore we've named it accordingly
 // and inject it only when compiling on a toolchain that lacks __pragma. This simplifies MSVC/Clang interop.
 #if !COMPILER_MSC
 #	define __pragma(x)     _Pragma (#x)

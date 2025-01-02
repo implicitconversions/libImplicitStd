@@ -1,3 +1,5 @@
+# Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
+
 # If you change the file be sure to update libImplicitStd.props as well
 
 SOURCES_libImplicitStd :=

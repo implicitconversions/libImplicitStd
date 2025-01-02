@@ -1,3 +1,4 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
 
 #include "StringUtil.h"
 #include "icy_assert.h"
@@ -64,9 +65,8 @@ std::string g_empty_stdstring;
 //
 //   - Requiring the programmer to explicitly specify the length of  the dest buffer minus 1 re-introduces one of
 //     the very problems that these functions were meant to solve: people forgetting to do -1 when specifying dest buffer
-//     size to various APIs.  I've encountered so many instances of people typo'ing their strncpy_s usage such that
-//     it still failed to truncate.  It gets especially ugly if you want to allow truncation while also concatenating
-//     a couple of strings together.  Ugh.  --jstine
+//     size to various APIs. It gets especially ugly if you want to allow truncation while also concatenating
+//     a couple of strings together.
 //
 
 int strcpy_ajek(char* dest, int destlen, const char* src)

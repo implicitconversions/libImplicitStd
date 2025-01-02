@@ -1,17 +1,11 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
+
 // Pre-Main Initialization Setup for Microsoft CRT And Windows Console
 //
 // Microsoft C/C++ Compiler/Linker:
 //   This file must be manually included into EVERY PROJECT that intends to use the msw_app_console_init system.
 //   Failure to add this file to the project which generates the executable will result in misbehavior of abort
 //   dialogs, crash reporting, and console codepage selection. (does not apply to clang/gcc)
-//
-//
-// [jstine 2022] I had developed a series of mechanations to try and force LINK to stuff this thing in the exe
-//  manifest but none of them proved reliable. Whether or not the added CRT initializers show up in the EXE seems
-//  to depend on some arbitrary order of linker inputs. It's a crapshoot. So after many tries, I've given up and
-//  built this thing as a Loose TU to link directly into the C file. (linking obj file directly would also work
-//  if we wanted to compile once and link to many places. But this seems OK for now and easier to visualize in
-//  the Solution Explorer and less risk of dependency issues).
 
 #if PLATFORM_MSW
 

@@ -1,10 +1,11 @@
+# Implicit Standard Core Library
 
-# StringUtil for cpp17
+This is a library that contains the core functionality of the Implicit.
 
-## Linking
+Main features include:
+ - Configuration files parsing
+ - Atomic operations
+ - File systems and paths operations
+ - Standard library loading
+ - String utilities
 
-## Usage
-
-## Features
-
- - 

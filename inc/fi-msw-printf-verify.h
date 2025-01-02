@@ -1,3 +1,4 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
 #pragma once
 
 // This header is for use only on the Microsoft C/C++ Compiler
@@ -9,11 +10,10 @@
 //
 // Microsoft doesn't provide a way to annoate custom-rolled user printf() functions for static analysis.
 // Well, ok -- it does provide _Printf_format_string_ but that's only effective when using the Code Analysis
-// tool which is both incrediously slow and generates a hundred false positives for every valid issue. In
-// other words, useless.
+// tool which is both incrediously slow and generates a hundred false positives for every valid issue.
 //
 // The upside is MSVC does perform automatic lightweight static analysis on printf() builtin functions as part
-// of the regular build process.  So I did a horrible thing and I built a macro that fake-calls MSVC's snprintf()
+// of the regular build process.  So we built a macro that fake-calls MSVC's snprintf()
 // on the input string, implemented as the second half of a nullified conditional such that it never _actually_
 // get run. All tokens from the format macro do get pasted twice as part of this process, though only one of
 // the pastes is reachable.  Behavior of the __COUNTER__ macro in this case would change.  No other program

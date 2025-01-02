@@ -1,6 +1,7 @@
 #!/bin/bash
-# Helper script for direct use from incremental_build_support.mk
 
+# Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
+# Helper script for direct use from incremental_build_support.mk
 
 m_compile_file=$1
 

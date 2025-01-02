@@ -1,3 +1,4 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
 
 #if PLATFORM_MSW
 #ifndef NOMINMAX
@@ -129,7 +130,7 @@ void msw_WriteFullDump(EXCEPTION_POINTERS* pep, const char* dumpname) {
 	}
 
 	// GENERIC_WRITE, FILE_SHARE_READ used to minimize vectors for failure.
-	// I've had multiple issues of this crap call failing for some permission denied reason. --jstine
+	// We've had multiple issues of this crap call failing for some permission denied reason.
 	InterlockedIncrement(&s_coredumps_in_flight);
 	if (HANDLE hFile = CreateFileA(dumpfile, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr); hFile != INVALID_HANDLE_VALUE) {
 		BOOL Result = MiniDumpWriteDump(

@@ -1,3 +1,4 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
 #pragma once
 
 #include <string_view>
@@ -10,8 +11,8 @@
 //
 // This is based on the same idea of how C compiler handles float/double internally already:
 // that all float parameters are automatically promoted to double format when specified into
-// va-args functions. I hope someday the C standard can somehow find a way to embrace the idea of
-// doing the same for ints. If I want optimized codepaths, I'm not using va-args anyway. So let's
+// va-args functions. We hope someday the C standard can somehow find a way to embrace the idea of
+// doing the same for ints. If we want optimized codepaths, we're not using va-args anyway. So let's
 // just pick a size and make all parameters match it already. --jstine
 
 template<typename T>

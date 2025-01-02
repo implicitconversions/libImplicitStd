@@ -1,7 +1,7 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
 #pragma once
 
 // Section Specification.
-// Microsoft has a remarkably obtuse way of defining sections compared to CLANG.
 //  - Microsoft requires a section to be declared and then each line item must be assigned to that section
 //    using __declspec repeatedly.
 //  - Microsoft doesn't allow specifying a bss type section.
@@ -9,9 +9,9 @@
 //    section.
 //  - Clang DOES allow specifying a bss type section.
 //
-// Because of this, I strongly recommend only using this feature for very trivial RW, RO, and Exec sections.
+// Because of this, we strongly recommend only using this feature for very trivial RW, RO, and Exec sections.
 // Be aware also that it's possible to very accidentally put line items into entirely different sections
-// on each compiler by way of lazy typo. I strongly recommend using additional macro wrappers for any non-
+// on each compiler by way of lazy typo. We strongly recommend using additional macro wrappers for any non-
 // trivial use cases to help avoid that annoyance.
 
 // Initializer Section Names explained:

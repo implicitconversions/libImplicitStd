@@ -1,3 +1,4 @@
+// Copyright (c) 2021-2025, Implicit Conversions, Inc. Subject to the MIT License. See LICENSE file.
 #pragma once
 
 // x64 architectures are 64-byte cacheline.
@@ -27,7 +28,7 @@
 // Atomics.
 //
 // Rationale:
-//   Yes C++11 has its own now. But I'm not interested in using them because we don't need to care
+//   Yes C++11 has its own now. But we are not interested in using them because we don't need to care
 //   about memory order things.  For one, they're ineffective on AMD64 systems, which implicitly impose
 //   __ATOMIC_SEQ_CST on all atomic operations except AtomicLoads. Furthermore, the actual use cases
 //   for anything other than either __ATOMIC_SEQ_CST or __ATOMIC_RELEASE are slim to none even on
@@ -35,8 +36,7 @@
 //
 //     * by doing __ATOMIC_RELEASE on the thread that writes data you don't need __ATOMIC_ACQUIRE on any
 //       consumer thread (and its really really hard to write code that uses __ATOMIC_ACQUIRE instead of
-//       release and have it be properly coherent and for the wee tiny perf boost who cares?  maybe if
-//       we're writing code for a 128-core spark or cray I guess we might care)
+//       release and have it be properly coherent and for the wee tiny perf boost who cares?
 //
 //     * __ATOMIC_CONSUME is similar to using the volatile keyword, as it only affects compiler optimiz-
 //       ations and instruction ordering. It's more aggressive than volatile as it affects all variables
@@ -51,9 +51,9 @@
 //       thing that is only applicable to SPARC and Itanium systems. To be sure it's useless on AMD64 or
 //       ARM64.
 //
-//   Final reason is performance in debug builds. For the same reason I've explicitly copied and pasted
+//   Final reason is performance in debug builds. For the same reason we've explicitly copied and pasted
 //   some things below which could have called other implementations. Debug builds lack inlining and we
-//   want to avoid a whole bunch of nested calls into std:memcpy and other nutty layers of cruft.
+//   want to avoid a whole bunch of nested calls into std:memcpy.
 //
 
 
