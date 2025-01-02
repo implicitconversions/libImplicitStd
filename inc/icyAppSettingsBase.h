@@ -7,11 +7,13 @@
 
 #include "StdStringArg.h"
 #include "StdStringEmpty.h"
+#include "StringTokenizer.h"
 
 #include <string>
 #include <optional>
 #include <algorithm>
 #include <limits>
+#include <vector>
 
 // helper for C++17's compound (assignment;conditional) style if() statements. Always returns TRUE. Example:
 //   if (auto path = appGetSetting("--assets-dir"); TakeStringOrDefault(path, "assets")) { }
@@ -114,6 +116,27 @@ namespace icyAppSettingsIfc
 			return false;
 		}
 		outDest = cvtResult.value();
+		return true;
+	}
+
+	/**
+	 * Returns a vector of values for a setting split by the given delimiter.
+	 * For example, calling with ("1920x1280", 'x'), will return { 1920, 1280 }.
+	 */
+	template<typename T>
+	bool appGetSettingDelimited(const std::string& name, char delimeter, std::vector<T>& outDest) {
+		auto rval = appGetSetting(name);
+		if (rval.empty()) {
+			return false;
+		}
+
+		outDest.clear();
+		auto toks = Tokenizer(rval.c_str());
+		while (auto tok = toks.GetNextTokenTrim(delimeter)) {
+			auto value = ConvertFromString<T>(tok);
+			outDest.push_back(value.value());
+		}
+
 		return true;
 	}
 
